@@ -1,5 +1,14 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { Diagnostic } from "../domain/cellModel";
+import {
+  clamp,
+  EDITOR_DEFAULT_HEIGHT,
+  EDITOR_MAX_HEIGHT,
+  EDITOR_MAX_WIDTH,
+  EDITOR_MIN_HEIGHT,
+  EDITOR_MIN_WIDTH
+} from "./layoutConstants";
 import { SourceEditor } from "./SourceEditor";
 
 interface EditorPanelProps {
@@ -10,6 +19,15 @@ interface EditorPanelProps {
   diagnostics: Diagnostic[];
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  width: number;
+  onWidthChange: (width: number) => void;
+}
+
+interface DragState {
+  startX: number;
+  startY: number;
+  startWidth: number;
+  startHeight: number;
 }
 
 export function EditorPanel({
@@ -19,10 +37,48 @@ export function EditorPanel({
   onSourceChange,
   diagnostics,
   collapsed,
-  onToggleCollapsed
+  onToggleCollapsed,
+  width,
+  onWidthChange
 }: EditorPanelProps) {
+  const [height, setHeight] = useState(EDITOR_DEFAULT_HEIGHT);
+  const dragStateRef = useRef<DragState | null>(null);
+
+  function handleResizeMove(event: MouseEvent) {
+    const dragState = dragStateRef.current;
+    if (!dragState) {
+      return;
+    }
+
+    const nextWidth = clamp(dragState.startWidth + (event.clientX - dragState.startX), EDITOR_MIN_WIDTH, EDITOR_MAX_WIDTH);
+    const nextHeight = clamp(
+      dragState.startHeight + (event.clientY - dragState.startY),
+      EDITOR_MIN_HEIGHT,
+      EDITOR_MAX_HEIGHT
+    );
+
+    onWidthChange(nextWidth);
+    setHeight(nextHeight);
+  }
+
+  function handleResizeEnd() {
+    dragStateRef.current = null;
+    window.removeEventListener("mousemove", handleResizeMove);
+    window.removeEventListener("mouseup", handleResizeEnd);
+  }
+
+  function handleResizeStart(event: ReactMouseEvent<HTMLDivElement>) {
+    event.preventDefault();
+    dragStateRef.current = { startX: event.clientX, startY: event.clientY, startWidth: width, startHeight: height };
+    window.addEventListener("mousemove", handleResizeMove);
+    window.addEventListener("mouseup", handleResizeEnd);
+  }
+
   return (
-    <div className={collapsed ? "editor-panel editor-panel--collapsed" : "editor-panel"}>
+    <div
+      className={collapsed ? "editor-panel editor-panel--collapsed" : "editor-panel"}
+      style={{ width, height: collapsed ? undefined : height }}
+    >
       <div className="editor-panel__header">
         <input
           aria-label="Diagram name"
@@ -56,6 +112,13 @@ export function EditorPanel({
               ))
             )}
           </div>
+          <div
+            className="editor-panel__resize-handle"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Resize editor panel"
+            onMouseDown={handleResizeStart}
+          />
         </>
       )}
     </div>

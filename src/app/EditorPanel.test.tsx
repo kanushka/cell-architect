@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { Diagnostic } from "../domain/cellModel";
+import { EDITOR_DEFAULT_WIDTH } from "./layoutConstants";
 import { EditorPanel } from "./EditorPanel";
 
 function renderPanel(overrides: Partial<Parameters<typeof EditorPanel>[0]> = {}) {
@@ -13,6 +14,8 @@ function renderPanel(overrides: Partial<Parameters<typeof EditorPanel>[0]> = {})
     diagnostics: [] as Diagnostic[],
     collapsed: false,
     onToggleCollapsed: vi.fn(),
+    width: EDITOR_DEFAULT_WIDTH,
+    onWidthChange: vi.fn(),
     ...overrides
   };
   render(<EditorPanel {...props} />);
@@ -63,5 +66,56 @@ describe("EditorPanel", () => {
 
     await user.type(screen.getByLabelText("Cell DSL source"), "!");
     expect(props.onSourceChange).toHaveBeenCalled();
+  });
+});
+
+describe("EditorPanel resizing", () => {
+  it("resizes width and height by dragging the resize handle", () => {
+    const onWidthChange = vi.fn();
+    renderPanel({ width: 320, onWidthChange });
+
+    const handle = screen.getByRole("separator", { name: "Resize editor panel" });
+    fireEvent.mouseDown(handle, { clientX: 300, clientY: 300 });
+    fireEvent.mouseMove(window, { clientX: 340, clientY: 260 });
+    fireEvent.mouseUp(window);
+
+    expect(onWidthChange).toHaveBeenLastCalledWith(360);
+  });
+
+  it("clamps the resized width to the configured maximum", () => {
+    const onWidthChange = vi.fn();
+    renderPanel({ width: 320, onWidthChange });
+
+    const handle = screen.getByRole("separator", { name: "Resize editor panel" });
+    fireEvent.mouseDown(handle, { clientX: 0, clientY: 0 });
+    fireEvent.mouseMove(window, { clientX: 5000, clientY: 0 });
+    fireEvent.mouseUp(window);
+
+    expect(onWidthChange).toHaveBeenLastCalledWith(560);
+  });
+
+  it("clamps the resized width to the configured minimum", () => {
+    const onWidthChange = vi.fn();
+    renderPanel({ width: 320, onWidthChange });
+
+    const handle = screen.getByRole("separator", { name: "Resize editor panel" });
+    fireEvent.mouseDown(handle, { clientX: 0, clientY: 0 });
+    fireEvent.mouseMove(window, { clientX: -5000, clientY: 0 });
+    fireEvent.mouseUp(window);
+
+    expect(onWidthChange).toHaveBeenLastCalledWith(260);
+  });
+
+  it("stops resizing after mouseup", () => {
+    const onWidthChange = vi.fn();
+    renderPanel({ width: 320, onWidthChange });
+
+    const handle = screen.getByRole("separator", { name: "Resize editor panel" });
+    fireEvent.mouseDown(handle, { clientX: 0, clientY: 0 });
+    fireEvent.mouseUp(window);
+    onWidthChange.mockClear();
+
+    fireEvent.mouseMove(window, { clientX: 100, clientY: 0 });
+    expect(onWidthChange).not.toHaveBeenCalled();
   });
 });

@@ -133,35 +133,62 @@ export function DslGuide({ onClose }: DslGuideProps) {
         </header>
 
         <div className="guide-content">
-          {notationSections.map((section) => (
-            <article className="guide-section" key={section.title}>
-              <div>
-                <h3>{section.title}</h3>
-                <p>{section.detail}</p>
-              </div>
-              {section.examples.map((example, index) => {
-                const key = `${section.title}::${index}`;
-                const copyLabel = example.label
-                  ? `Copy ${section.title} ${example.label} example`
-                  : `Copy ${section.title} example`;
+          {notationSections.map((section) => {
+            const isSingleUnlabeled = section.examples.length === 1 && !section.examples[0].label;
 
-                return (
-                  <div className="guide-example" key={key}>
-                    <div className="guide-example__copy">
-                      {example.label ? <span className="guide-example__label">{example.label}</span> : <span />}
-                      <button type="button" aria-label={copyLabel} onClick={() => void copyCode(key, example.code)}>
-                        {copiedKey === key ? <Check size={15} /> : <Copy size={15} />}
-                        <span>{copiedKey === key ? "Copied" : "Copy"}</span>
-                      </button>
-                    </div>
-                    <pre>
-                      <code>{example.code}</code>
-                    </pre>
+            return (
+              <article className="guide-section" key={section.title}>
+                <div className="guide-section__copy">
+                  <div>
+                    <h3>{section.title}</h3>
+                    <p>{section.detail}</p>
                   </div>
-                );
-              })}
-            </article>
-          ))}
+                  {isSingleUnlabeled && (
+                    <button
+                      type="button"
+                      aria-label={`Copy ${section.title} example`}
+                      onClick={() => void copyCode(`${section.title}::0`, section.examples[0].code)}
+                    >
+                      {copiedKey === `${section.title}::0` ? <Check size={15} /> : <Copy size={15} />}
+                      <span>{copiedKey === `${section.title}::0` ? "Copied" : "Copy"}</span>
+                    </button>
+                  )}
+                </div>
+
+                {isSingleUnlabeled ? (
+                  <pre>
+                    <code>{section.examples[0].code}</code>
+                  </pre>
+                ) : (
+                  section.examples.map((example, index) => {
+                    const key = `${section.title}::${index}`;
+                    const copyLabel = example.label
+                      ? `Copy ${section.title} ${example.label} example`
+                      : `Copy ${section.title} example`;
+
+                    return (
+                      <div className="guide-example" key={key}>
+                        <div className="guide-example__copy">
+                          <span className="guide-example__label">{example.label}</span>
+                          <button
+                            type="button"
+                            aria-label={copyLabel}
+                            onClick={() => void copyCode(key, example.code)}
+                          >
+                            {copiedKey === key ? <Check size={15} /> : <Copy size={15} />}
+                            <span>{copiedKey === key ? "Copied" : "Copy"}</span>
+                          </button>
+                        </div>
+                        <pre>
+                          <code>{example.code}</code>
+                        </pre>
+                      </div>
+                    );
+                  })
+                )}
+              </article>
+            );
+          })}
         </div>
       </section>
     </div>

@@ -51,7 +51,10 @@ button:disabled {
 }
 
 .app-shell--diagram-fullscreen {
+  position: fixed;
+  inset: 0;
   grid-template-columns: 1fr;
+  overflow: hidden;
   background: #eef2f6;
 }
 
@@ -74,6 +77,10 @@ button:disabled {
   padding-left: 0;
   padding-right: 0;
   opacity: 0;
+}
+
+.app-shell--diagram-fullscreen .document-rail {
+  display: none;
 }
 
 .rail-header {
@@ -284,6 +291,10 @@ button:disabled {
   padding: 16px;
 }
 
+.app-shell--diagram-fullscreen .workbench {
+  padding: 0;
+}
+
 .document-title {
   min-width: 0;
   display: flex;
@@ -391,13 +402,6 @@ button:disabled {
   border-radius: 8px;
 }
 
-.guide-section__copy {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-}
-
 .guide-section h3,
 .guide-section p {
   margin: 0;
@@ -415,7 +419,27 @@ button:disabled {
   line-height: 1.45;
 }
 
-.guide-section__copy button {
+.guide-example {
+  display: grid;
+  gap: 6px;
+}
+
+.guide-example__copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.guide-example__label {
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.guide-example__copy button {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
@@ -428,7 +452,7 @@ button:disabled {
   border-radius: 8px;
 }
 
-.guide-section__copy button:hover {
+.guide-example__copy button:hover {
   border-color: #94a3b8;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
 }
@@ -458,6 +482,7 @@ button:disabled {
 }
 
 .split-editor--diagram-fullscreen {
+  height: 100vh;
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
 }
@@ -480,7 +505,9 @@ button:disabled {
 }
 
 .split-editor--diagram-fullscreen .canvas-pane {
-  min-height: calc(100vh - 32px);
+  height: 100vh;
+  min-height: 100vh;
+  border-radius: 0;
 }
 
 .pane-header {
@@ -921,15 +948,15 @@ button:disabled {
   }
 
   .guide-header,
-  .guide-section__copy {
+  .guide-example__copy {
     align-items: stretch;
   }
 
-  .guide-section__copy {
+  .guide-example__copy {
     flex-direction: column;
   }
 
-  .guide-section__copy button {
+  .guide-example__copy button {
     justify-content: center;
     width: 100%;
   }

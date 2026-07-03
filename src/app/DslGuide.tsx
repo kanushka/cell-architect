@@ -6,55 +6,75 @@ const notationSections = [
   {
     title: "Metadata",
     detail: "Set the diagram title and optional version.",
-    code: "title OrderProject\nversion v1"
+    examples: [{ code: "title OrderProject\nversion v1" }]
   },
   {
     title: "Components",
     detail: "Create internal components with an id, with or without a type.",
-    code: "component usersAPI\ncomponent WebApp web-app\ncomponent OrderService service"
+    examples: [{ code: "component usersAPI\ncomponent WebApp web-app\ncomponent OrderService service" }]
   },
   {
     title: "Boundary declarations",
     detail: "Predeclare external systems on a boundary, with or without a type, then reference them in arrows.",
-    code: "north CustomerApp\neast InventoryAPI api\nsouth Stripe payment"
+    examples: [{ code: "north CustomerApp\neast InventoryAPI api\nsouth Stripe payment" }]
   },
   {
     title: "Internal dependencies",
     detail:
       "Declare components, then connect them. You can also skip the declaration and let Cell Architect infer a plain component.",
-    code: "component api\ncomponent OrderService\n\napi -> OrderService"
+    examples: [
+      { label: "With declaration", code: "component api\ncomponent OrderService\n\napi -> OrderService" },
+      { label: "Without declaration", code: "api -> OrderService" }
+    ]
   },
   {
     title: "Boundary dependencies",
     detail:
       "Declare an external, then connect it. You can also skip the declaration and create the dependency inline.",
-    code: "north CustomerApp\neast InventoryAPI\n\nCustomerApp -> WebApp\nOrderService -> InventoryAPI\nnorth PartnerPortal -> OrderAPI\nOrderService -> east InventoryCell"
+    examples: [
+      {
+        label: "With declaration",
+        code: "north CustomerApp\neast InventoryAPI\n\nCustomerApp -> WebApp\nOrderService -> InventoryAPI"
+      },
+      {
+        label: "Without declaration (inline)",
+        code: "north PartnerPortal -> OrderAPI\nOrderService -> east InventoryCell"
+      }
+    ]
   },
   {
     title: "Gateway exposure",
     detail: "Expose an internal component through a gateway when the external consumer is unknown.",
-    code: "north -> api\napi -> east"
+    examples: [{ code: "north -> api\napi -> east" }]
   },
   {
     title: "Aliases",
     detail:
       "Use \"as\" to set a display label on a component or external. A label is one word by default; wrap it in quotes for multiple words.",
-    code: "component api as OrderAPI\nsouth db as Datastore\ncomponent odb as \"Order Datastore\"\nsouth adb as \"Azure Postgre\" database"
+    examples: [
+      {
+        code: "component api as OrderAPI\nsouth db as Datastore\ncomponent odb as \"Order Datastore\"\nsouth adb as \"Azure Postgre\" database"
+      }
+    ]
   },
   {
     title: "Labels in dependencies",
     detail: "Add a label after a colon on any dependency arrow.",
-    code: "OrderService -> EventPublisher : order.created\nCustomerApp -> WebApp : HTTPS\nOrderService -> InventoryAPI : reserve stock"
+    examples: [
+      {
+        code: "OrderService -> EventPublisher : order.created\nCustomerApp -> WebApp : HTTPS\nOrderService -> InventoryAPI : reserve stock"
+      }
+    ]
   },
   {
     title: "Comments",
     detail: "Use hash or double-slash comments. Blank lines are ignored.",
-    code: "# Customer entry points\n// Back office path"
+    examples: [{ code: "# Customer entry points\n// Back office path" }]
   },
   {
     title: "Full sample",
     detail: "A complete order system diagram using each supported notation.",
-    code: defaultSampleSource
+    examples: [{ code: defaultSampleSource }]
   }
 ];
 
@@ -88,14 +108,14 @@ async function writeClipboardText(text: string) {
 }
 
 export function DslGuide({ onClose }: DslGuideProps) {
-  const [copiedTitle, setCopiedTitle] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  async function copyCode(title: string, code: string) {
+  async function copyCode(key: string, code: string) {
     try {
       await writeClipboardText(code);
-      setCopiedTitle(title);
+      setCopiedKey(key);
     } catch {
-      setCopiedTitle(null);
+      setCopiedKey(null);
     }
   }
 
@@ -115,23 +135,31 @@ export function DslGuide({ onClose }: DslGuideProps) {
         <div className="guide-content">
           {notationSections.map((section) => (
             <article className="guide-section" key={section.title}>
-              <div className="guide-section__copy">
-                <div>
-                  <h3>{section.title}</h3>
-                  <p>{section.detail}</p>
-                </div>
-                <button
-                  type="button"
-                  aria-label={`Copy ${section.title} example`}
-                  onClick={() => void copyCode(section.title, section.code)}
-                >
-                  {copiedTitle === section.title ? <Check size={15} /> : <Copy size={15} />}
-                  <span>{copiedTitle === section.title ? "Copied" : "Copy"}</span>
-                </button>
+              <div>
+                <h3>{section.title}</h3>
+                <p>{section.detail}</p>
               </div>
-              <pre>
-                <code>{section.code}</code>
-              </pre>
+              {section.examples.map((example, index) => {
+                const key = `${section.title}::${index}`;
+                const copyLabel = example.label
+                  ? `Copy ${section.title} ${example.label} example`
+                  : `Copy ${section.title} example`;
+
+                return (
+                  <div className="guide-example" key={key}>
+                    <div className="guide-example__copy">
+                      {example.label ? <span className="guide-example__label">{example.label}</span> : <span />}
+                      <button type="button" aria-label={copyLabel} onClick={() => void copyCode(key, example.code)}>
+                        {copiedKey === key ? <Check size={15} /> : <Copy size={15} />}
+                        <span>{copiedKey === key ? "Copied" : "Copy"}</span>
+                      </button>
+                    </div>
+                    <pre>
+                      <code>{example.code}</code>
+                    </pre>
+                  </div>
+                );
+              })}
             </article>
           ))}
         </div>

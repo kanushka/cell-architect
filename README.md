@@ -54,31 +54,33 @@ npm run lint
 ## DSL Example
 
 ```cell
-title OrderProject
-version v1
-
 component WebApp web-app
-component api as OrderAPI api
-component OrderService service
+component orders as Orders api
 component odb as OrderDB database
-component EventPublisher event
+component ep as "Event Publisher" event
 
-north CustomerApp webapp
-west ap as AdminPortal webapp
-east InventoryAPI api
+north ca as "Customer App" webapp
+north pp as "Partner Portal" webapp
+west ap as "Admin Portal" webapp
+east inventories api
+east customers api
 south Stripe payment
+south SendGrid email
 
-CustomerApp -> WebApp : HTTPS
-ap -> api : backoffice
+ca -> WebApp : HTTPS
+pp -> orders : REST
+ap -> orders : backoffice
 
-WebApp -> api
-api -> OrderService
-OrderService -> odb
-OrderService -> EventPublisher : order.created
+WebApp -> orders
+orders -> odb
+orders -> ep : order.created
 
-OrderService -> InventoryAPI : reserve stock
-OrderService -> Stripe : payment
-north -> api
+orders -> inventories : reserve stock
+orders -> customers : customer profile
+orders -> Stripe : payment
+orders -> SendGrid : email
+
+north -> orders
 ```
 
 For full notation details, see the [DSL guide](docs/dsl-guide.md).

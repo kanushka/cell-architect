@@ -80,11 +80,25 @@ describe("DiagramCanvas insets", () => {
 });
 
 describe("DiagramCanvas component styling", () => {
-  it("marks API components so they can use the same orange circle treatment as API externals", () => {
+  it("does not mark API components with a special color class", () => {
     const model = buildModel("component books api");
     render(<DiagramCanvas model={model} />);
 
-    expect(screen.getByText("books").closest(".component-node")).toHaveClass("component-node--api");
+    expect(screen.getByText("books").closest(".component-node")).not.toHaveClass("component-node--api");
+  });
+
+  it("renders internal component subtype text inside the component circle", () => {
+    const model = buildModel("component books api");
+    render(<DiagramCanvas model={model} />);
+
+    expect(screen.getByText("api").closest(".component-node")).toBeInTheDocument();
+  });
+
+  it("still renders boundary dependency subtype text inside external circles", () => {
+    const model = buildModel("component books\neast users api\nbooks -> users");
+    render(<DiagramCanvas model={model} />);
+
+    expect(screen.getByText("api").closest(".external-node")).toBeInTheDocument();
   });
 });
 

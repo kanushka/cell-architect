@@ -14,9 +14,9 @@ import {
   getBezierPath
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Maximize2, Minus, Plus } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { CellDiagramModel } from "../domain/cellModel";
+import { FitScreenIcon, ZoomInIcon, ZoomOutIcon } from "../ui/ControlIcons";
 import { toReactFlow } from "./flowLayout";
 import { connectionIdsForNode, edgeConnectionId, highlightedNodeIdsForConnections } from "./highlightModel";
 
@@ -64,10 +64,9 @@ function ComponentNode({ data }: NodeProps) {
   const nodeId = String(data.nodeId);
   const componentType =
     typeof data.componentType === "string" && data.componentType.trim() ? data.componentType : undefined;
-  const typeClassName = componentType?.trim().toLowerCase() === "api" ? " component-node--api" : "";
 
   return (
-    <div className={`component-node${typeClassName}`} data-node-shape="circle" data-diagram-node-id={nodeId}>
+    <div className="component-node" data-node-shape="circle" data-diagram-node-id={nodeId}>
       <Handle id="component-top-target" type="target" position={Position.Top} />
       <Handle id="component-top-source" type="source" position={Position.Top} />
       <Handle id="component-left-target" type="target" position={Position.Left} />
@@ -194,11 +193,11 @@ function ZoomControls({ insets }: { insets: DiagramCanvasInsets }) {
   return (
     <div className="zoom-controls">
       <button type="button" className="zoom-controls__button" aria-label="Zoom out" onClick={() => zoomOut()}>
-        <Minus size={14} />
+        <ZoomOutIcon size={16} />
       </button>
       <span className="zoom-controls__level">{Math.round(zoom * 100)}%</span>
       <button type="button" className="zoom-controls__button" aria-label="Zoom in" onClick={() => zoomIn()}>
-        <Plus size={14} />
+        <ZoomInIcon size={16} />
       </button>
       <button
         type="button"
@@ -206,7 +205,7 @@ function ZoomControls({ insets }: { insets: DiagramCanvasInsets }) {
         aria-label="Fit diagram to view"
         onClick={() => fitView({ padding: buildFitPadding(insets), duration: 200 })}
       >
-        <Maximize2 size={14} />
+        <FitScreenIcon size={16} />
       </button>
     </div>
   );

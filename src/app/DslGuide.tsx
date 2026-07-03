@@ -2,7 +2,18 @@ import { Check, Copy, X } from "lucide-react";
 import { useState } from "react";
 import { defaultSampleSource } from "../storage/defaultSample";
 
-const notationSections = [
+interface NotationExample {
+  label?: string;
+  code: string;
+}
+
+interface NotationSection {
+  title: string;
+  detail: string;
+  examples: NotationExample[];
+}
+
+const notationSections: NotationSection[] = [
   {
     title: "Metadata",
     detail: "Set the diagram title and optional version.",

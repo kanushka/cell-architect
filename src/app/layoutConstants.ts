@@ -4,11 +4,11 @@ export const DIAGRAMS_PANEL_WIDTH = 260;
 
 export const EDITOR_MIN_WIDTH = 260;
 export const EDITOR_MAX_WIDTH = 560;
-export const EDITOR_DEFAULT_WIDTH = 380;
+export const EDITOR_DEFAULT_WIDTH = 416;
 
 export const EDITOR_MIN_HEIGHT = 240;
 export const EDITOR_MAX_HEIGHT = 720;
-export const EDITOR_DEFAULT_HEIGHT = 420;
+export const EDITOR_DEFAULT_HEIGHT = 720;
 
 export function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);

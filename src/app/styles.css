@@ -142,8 +142,8 @@ button:disabled {
 .editor-panel {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  width: 320px;
-  height: 420px;
+  width: 416px;
+  height: 720px;
   background: #ffffff;
   border: 1px solid rgba(148, 163, 184, 0.38);
   border-radius: 12px;
@@ -838,14 +838,10 @@ button:disabled {
 .component-node small {
   color: var(--muted);
   max-width: 78px;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   line-height: 1.1;
   overflow-wrap: anywhere;
-}
-
-.component-node--api {
-  border-color: var(--east);
 }
 
 .external-node {
@@ -868,6 +864,15 @@ button:disabled {
   color: #172033;
   font-size: 12px;
   font-weight: 850;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.external-node small {
+  color: var(--muted);
+  max-width: 78px;
+  font-size: 10px;
+  font-weight: 800;
   line-height: 1.1;
   overflow-wrap: anywhere;
 }

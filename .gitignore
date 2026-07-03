@@ -4,6 +4,7 @@ dist
 .env
 .env.local
 coverage
+.firebase
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts

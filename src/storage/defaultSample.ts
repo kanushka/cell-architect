@@ -1,32 +1,27 @@
-export const defaultSampleSource = `title OrderProject
-version v1
-
-component WebApp web-app
-component api as OrderAPI api
-component OrderService service
+export const defaultSampleSource = `component WebApp web-app
+component orders as Orders api
 component odb as OrderDB database
-component EventPublisher event
+component ep as "Event Publisher" event
 
-north CustomerApp webapp
-north PartnerPortal webapp
-west ap as AdminPortal webapp
-east InventoryAPI api
-east CustomerCell service
+north ca as "Customer App" webapp
+north pp as "Partner Portal" webapp
+west ap as "Admin Portal" webapp
+east inventories api
+east customers api
 south Stripe payment
 south SendGrid email
 
-CustomerApp -> WebApp : HTTPS
-PartnerPortal -> api : REST
-ap -> api : backoffice
+ca -> WebApp : HTTPS
+pp -> orders : REST
+ap -> orders : backoffice
 
-WebApp -> api
-api -> OrderService
-OrderService -> odb
-OrderService -> EventPublisher : order.created
+WebApp -> orders
+orders -> odb
+orders -> ep : order.created
 
-OrderService -> InventoryAPI : reserve stock
-OrderService -> CustomerCell : customer profile
-OrderService -> Stripe : payment
-OrderService -> SendGrid : email
+orders -> inventories : reserve stock
+orders -> customers : customer profile
+orders -> Stripe : payment
+orders -> SendGrid : email
 
-north -> api`;
+north -> orders`;

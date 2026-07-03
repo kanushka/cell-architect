@@ -12,11 +12,11 @@ describe("App", () => {
   it("renders the default sample full-bleed with the editor open", () => {
     const { container } = render(<App />);
 
-    expect(screen.getAllByText("OrderProject").length).toBeGreaterThan(0);
-    expect(screen.getByText("CustomerApp")).toBeInTheDocument();
+    expect(screen.getByText("Orders")).toBeInTheDocument();
+    expect(screen.getByText("Customer App")).toBeInTheDocument();
     expect(screen.getByLabelText("Diagram name")).toHaveValue("Order System");
     expect(container.querySelector('[data-cell-shape="octagon"]')).toBeInTheDocument();
-    expect(container.querySelectorAll('[data-node-shape="circle"]').length).toBeGreaterThanOrEqual(5);
+    expect(container.querySelectorAll('[data-node-shape="circle"]').length).toBeGreaterThanOrEqual(4);
   });
 
   it("shows parser diagnostics in the editor panel while preserving the canvas", async () => {
@@ -139,18 +139,18 @@ describe("App", () => {
 
   it("focuses linked connections when clicking a component and clears with Escape", async () => {
     render(<App />);
-    const orderServiceLabel = screen.getByText("OrderService");
-    const orderServiceCircle = orderServiceLabel.closest(".component-node");
-    const orderServiceNode = orderServiceLabel.closest(".react-flow__node");
+    const ordersLabel = screen.getByText("Orders");
+    const ordersCircle = ordersLabel.closest(".component-node");
+    const ordersNode = ordersLabel.closest(".react-flow__node");
 
-    expect(orderServiceCircle).toBeInTheDocument();
-    await waitFor(() => expect(orderServiceCircle).toHaveAttribute("data-diagram-node-id", "OrderService"));
+    expect(ordersCircle).toBeInTheDocument();
+    await waitFor(() => expect(ordersCircle).toHaveAttribute("data-diagram-node-id", "orders"));
 
-    fireEvent.click(orderServiceCircle!);
-    await waitFor(() => expect(orderServiceNode).toHaveClass("connection-highlight-node"));
+    fireEvent.click(ordersCircle!);
+    await waitFor(() => expect(ordersNode).toHaveClass("connection-highlight-node"));
 
     fireEvent.keyDown(window, { key: "Escape" });
-    await waitFor(() => expect(orderServiceNode).not.toHaveClass("connection-highlight-node"));
+    await waitFor(() => expect(ordersNode).not.toHaveClass("connection-highlight-node"));
   });
 
   it("does not show React Flow branding labels in the diagram chrome", () => {

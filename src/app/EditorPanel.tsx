@@ -1,6 +1,6 @@
-import { ChevronUp, Code2 } from "lucide-react";
 import { useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { Diagnostic } from "../domain/cellModel";
+import { CodeHideIcon, CodeShowIcon } from "../ui/ControlIcons";
 import {
   clamp,
   EDITOR_DEFAULT_HEIGHT,
@@ -84,7 +84,7 @@ export function EditorPanel({
           aria-describedby="show-text-editor-tooltip"
           onClick={onToggleCollapsed}
         >
-          <Code2 size={18} />
+          <CodeShowIcon size={18} />
         </button>
         <span id="show-text-editor-tooltip" role="tooltip" className="app-tooltip">
           Show text editor
@@ -110,7 +110,7 @@ export function EditorPanel({
             aria-describedby="hide-text-editor-tooltip"
             onClick={onToggleCollapsed}
           >
-            <ChevronUp size={16} />
+            <CodeHideIcon size={18} />
           </button>
           <span id="hide-text-editor-tooltip" role="tooltip" className="app-tooltip">
             Hide text editor

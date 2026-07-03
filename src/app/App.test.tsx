@@ -44,17 +44,17 @@ describe("App", () => {
     expect(screen.getByLabelText("Cell DSL source")).toBeInTheDocument();
   });
 
-  it("opens the hamburger menu and creates a new diagram", async () => {
+  it("creates a new diagram from the diagrams panel", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: "Open main menu" }));
-    await user.click(screen.getByRole("menuitem", { name: "New diagram" }));
+    await user.click(screen.getByRole("button", { name: "Diagrams" }));
+    await user.click(screen.getByRole("button", { name: "New diagram" }));
 
     expect(screen.getByLabelText("Diagram name")).toHaveValue("Untitled Cell");
   });
 
-  it("opens the DSL guide from the hamburger menu", async () => {
+  it("opens the DSL guide from its top-right button", async () => {
     const user = userEvent.setup();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
@@ -63,8 +63,7 @@ describe("App", () => {
     });
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: "Open main menu" }));
-    await user.click(screen.getByRole("menuitem", { name: "DSL Guide" }));
+    await user.click(screen.getByRole("button", { name: "Guide" }));
 
     expect(screen.getByRole("dialog", { name: "Cell DSL Guide" })).toBeInTheDocument();
   });
@@ -76,8 +75,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Diagrams" }));
     expect(screen.getByRole("navigation", { name: "Saved diagrams" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Open main menu" }));
-    await user.click(screen.getByRole("menuitem", { name: "New diagram" }));
+    await user.click(screen.getByRole("button", { name: "New diagram" }));
     expect(screen.getByLabelText("Diagram name")).toHaveValue("Untitled Cell");
 
     await user.click(screen.getByText("Order System"));
@@ -109,17 +107,14 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App />);
 
+    await user.click(screen.getByRole("button", { name: "Diagrams" }));
     for (let index = 1; index < 10; index += 1) {
-      await user.click(screen.getByRole("button", { name: "Open main menu" }));
-      await user.click(screen.getByRole("menuitem", { name: "New diagram" }));
+      await user.click(screen.getByRole("button", { name: "New diagram" }));
     }
 
-    await user.click(screen.getByRole("button", { name: "Open main menu" }));
-    expect(screen.getByRole("menuitem", { name: "New diagram" })).toBeDisabled();
-    expect(screen.getByRole("menuitem", { name: "Import .cell" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "New diagram" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Import .cell" })).toBeDisabled();
 
-    await user.keyboard("{Escape}");
-    await user.click(screen.getByRole("button", { name: "Diagrams" }));
     await user.click(screen.getAllByRole("button", { name: /More actions for/ })[0]);
     expect(screen.getByRole("menuitem", { name: "Duplicate" })).toBeDisabled();
   });
@@ -130,11 +125,11 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Share" })).toBeDisabled();
   });
 
-  it("shows the info popover with the repo link", async () => {
+  it("shows the help popover with the repo link", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: "Open info" }));
+    await user.click(screen.getByRole("button", { name: "Open help" }));
     expect(screen.getByRole("dialog", { name: "About Cell Architect" })).toBeInTheDocument();
   });
 

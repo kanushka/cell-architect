@@ -1,3 +1,4 @@
+import { BookOpen } from "lucide-react";
 import { ChangeEvent, useMemo, useRef, useState } from "react";
 import { compileCellSource } from "../compiler/compileCellSource";
 import { DiagramCanvas } from "../renderer/DiagramCanvas";
@@ -11,12 +12,11 @@ import {
   replaceRepository,
   saveDocument
 } from "../storage/documentRepository";
-import { AppMenu } from "./AppMenu";
 import { computeCanvasInsets, EDITOR_DEFAULT_WIDTH } from "./layoutConstants";
 import { DiagramsPanel } from "./DiagramsPanel";
 import { DslGuide } from "./DslGuide";
 import { EditorPanel } from "./EditorPanel";
-import { InfoPanel } from "./InfoPanel";
+import { HelpPanel } from "./HelpPanel";
 import { ShareButton } from "./ShareButton";
 import "./styles.css";
 
@@ -126,12 +126,6 @@ export function App() {
       <DiagramCanvas model={visibleModel} insets={insets} />
 
       <div className="overlay overlay--top-left">
-        <AppMenu
-          onNewDocument={handleNewDocument}
-          onImportClick={handleImportClick}
-          onOpenGuide={() => setGuideOpen(true)}
-          disableCreateActions={isAtDocumentLimit}
-        />
         <EditorPanel
           documentName={activeDocument.name}
           onDocumentNameChange={updateActiveName}
@@ -147,9 +141,14 @@ export function App() {
 
       <div className="overlay overlay--top-right">
         <ShareButton />
+        <HelpPanel />
+        <button type="button" className="pill-button" onClick={() => setGuideOpen(true)}>
+          <BookOpen size={15} />
+          <span>Guide</span>
+        </button>
         <button
           type="button"
-          className="diagrams-toggle"
+          className="pill-button"
           aria-pressed={diagramsOpen}
           onClick={() => setDiagramsOpen((current) => !current)}
         >
@@ -163,16 +162,14 @@ export function App() {
           activeDocumentId={activeDocument.id}
           isAtDocumentLimit={isAtDocumentLimit}
           onSelect={setActiveDocument}
+          onNewDocument={handleNewDocument}
+          onImportClick={handleImportClick}
           onDuplicate={handleDuplicate}
           onExport={handleExport}
           onDelete={handleDelete}
           onClose={() => setDiagramsOpen(false)}
         />
       ) : null}
-
-      <div className="overlay overlay--bottom-right">
-        <InfoPanel />
-      </div>
 
       <input ref={fileInputRef} type="file" accept=".cell,.txt" hidden onChange={handleImport} />
 

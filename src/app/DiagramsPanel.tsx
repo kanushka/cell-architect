@@ -1,4 +1,4 @@
-import { Copy, Download, Eye, MoreVertical, Trash2, X } from "lucide-react";
+import { Copy, Download, Eye, FilePlus2, MoreVertical, Trash2, Upload, X } from "lucide-react";
 import { useState } from "react";
 import { DiagramDocument } from "../storage/documentRepository";
 
@@ -7,6 +7,8 @@ interface DiagramsPanelProps {
   activeDocumentId: string;
   isAtDocumentLimit: boolean;
   onSelect: (id: string) => void;
+  onNewDocument: () => void;
+  onImportClick: () => void;
   onDuplicate: (document: DiagramDocument) => void;
   onExport: (document: DiagramDocument) => void;
   onDelete: (document: DiagramDocument) => void;
@@ -18,6 +20,8 @@ export function DiagramsPanel({
   activeDocumentId,
   isAtDocumentLimit,
   onSelect,
+  onNewDocument,
+  onImportClick,
   onDuplicate,
   onExport,
   onDelete,
@@ -29,9 +33,29 @@ export function DiagramsPanel({
     <div className="diagrams-panel">
       <div className="diagrams-panel__header">
         <span>Diagrams</span>
-        <button type="button" className="icon-button" aria-label="Close diagrams panel" onClick={onClose}>
-          <X size={16} />
-        </button>
+        <div className="diagrams-panel__header-actions">
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="New diagram"
+            disabled={isAtDocumentLimit}
+            onClick={onNewDocument}
+          >
+            <FilePlus2 size={16} />
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Import .cell"
+            disabled={isAtDocumentLimit}
+            onClick={onImportClick}
+          >
+            <Upload size={16} />
+          </button>
+          <button type="button" className="icon-button" aria-label="Close diagrams panel" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </div>
       </div>
       <nav className="diagrams-panel__list" aria-label="Saved diagrams">
         {documents.map((document) => (

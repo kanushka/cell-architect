@@ -25,16 +25,16 @@ describe("canvas-first shell", () => {
     expect(rule).toContain("overflow: hidden;");
   });
 
-  it("positions the top-left, top-right, and bottom-right overlays as absolute layers", () => {
+  it("positions the top-left and top-right overlays as absolute layers", () => {
     expect(ruleFor(".overlay--top-left")).toContain("position: absolute;");
     expect(ruleFor(".overlay--top-right")).toContain("position: absolute;");
-    expect(ruleFor(".overlay--bottom-right")).toContain("position: absolute;");
   });
 
-  it("floats the diagrams panel on the right edge, spanning the viewport height", () => {
+  it("floats the diagrams panel on the right edge, leaving room for the zoom controls below it", () => {
     const rule = ruleFor(".diagrams-panel");
     expect(rule).toContain("position: absolute;");
     expect(rule).toContain("right:");
+    expect(rule).toContain("--zoom-controls-height");
   });
 });
 

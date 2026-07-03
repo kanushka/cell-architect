@@ -15,24 +15,31 @@ function buildDocument(overrides: Partial<DiagramDocument> = {}): DiagramDocumen
   };
 }
 
+function renderPanel(overrides: Partial<Parameters<typeof DiagramsPanel>[0]> = {}) {
+  const props = {
+    documents: [buildDocument()],
+    activeDocumentId: "doc-1",
+    isAtDocumentLimit: false,
+    onSelect: vi.fn(),
+    onNewDocument: vi.fn(),
+    onImportClick: vi.fn(),
+    onDuplicate: vi.fn(),
+    onExport: vi.fn(),
+    onDelete: vi.fn(),
+    onClose: vi.fn(),
+    ...overrides
+  };
+  render(<DiagramsPanel {...props} />);
+  return props;
+}
+
 describe("DiagramsPanel", () => {
   it("lists documents and selects one on click", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
     const documents = [buildDocument(), buildDocument({ id: "doc-2", name: "Untitled Cell" })];
 
-    render(
-      <DiagramsPanel
-        documents={documents}
-        activeDocumentId="doc-1"
-        isAtDocumentLimit={false}
-        onSelect={onSelect}
-        onDuplicate={vi.fn()}
-        onExport={vi.fn()}
-        onDelete={vi.fn()}
-        onClose={vi.fn()}
-      />
-    );
+    renderPanel({ documents, onSelect });
 
     expect(screen.getByText("Order System")).toBeInTheDocument();
     expect(screen.getByText("Untitled Cell")).toBeInTheDocument();
@@ -48,18 +55,7 @@ describe("DiagramsPanel", () => {
     const onDelete = vi.fn();
     const documents = [buildDocument()];
 
-    render(
-      <DiagramsPanel
-        documents={documents}
-        activeDocumentId="doc-1"
-        isAtDocumentLimit={false}
-        onSelect={vi.fn()}
-        onDuplicate={onDuplicate}
-        onExport={onExport}
-        onDelete={onDelete}
-        onClose={vi.fn()}
-      />
-    );
+    renderPanel({ documents, onDuplicate, onExport, onDelete });
 
     await user.click(screen.getByRole("button", { name: "More actions for Order System" }));
     await user.click(screen.getByRole("menuitem", { name: "Duplicate" }));
@@ -77,25 +73,34 @@ describe("DiagramsPanel", () => {
   it("disables duplicate at the document limit and closes via the close button", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const documents = [buildDocument()];
 
-    render(
-      <DiagramsPanel
-        documents={documents}
-        activeDocumentId="doc-1"
-        isAtDocumentLimit
-        onSelect={vi.fn()}
-        onDuplicate={vi.fn()}
-        onExport={vi.fn()}
-        onDelete={vi.fn()}
-        onClose={onClose}
-      />
-    );
+    renderPanel({ isAtDocumentLimit: true, onClose });
 
     await user.click(screen.getByRole("button", { name: "More actions for Order System" }));
     expect(screen.getByRole("menuitem", { name: "Duplicate" })).toBeDisabled();
 
     await user.click(screen.getByRole("button", { name: "Close diagrams panel" }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("exposes New diagram and Import actions in the header", async () => {
+    const user = userEvent.setup();
+    const onNewDocument = vi.fn();
+    const onImportClick = vi.fn();
+
+    renderPanel({ onNewDocument, onImportClick });
+
+    await user.click(screen.getByRole("button", { name: "New diagram" }));
+    expect(onNewDocument).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: "Import .cell" }));
+    expect(onImportClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables New diagram and Import at the document limit", () => {
+    renderPanel({ isAtDocumentLimit: true });
+
+    expect(screen.getByRole("button", { name: "New diagram" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Import .cell" })).toBeDisabled();
   });
 });

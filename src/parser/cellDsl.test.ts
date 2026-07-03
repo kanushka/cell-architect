@@ -273,7 +273,7 @@ describe("compileCellSource", () => {
     const result = compileCellSource(defaultSampleSource);
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.model?.title).toBe("OrderCell");
+    expect(result.model?.title).toBe("OrderProject");
   });
 
   it("creates a normalized model and external nodes for the order system sample", () => {

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { STORAGE_KEY } from "../storage/documentRepository";
 import { App } from "./App";
 
 describe("App", () => {
@@ -14,7 +15,7 @@ describe("App", () => {
 
     expect(screen.getByRole("heading", { name: "Cell Architect" })).toBeInTheDocument();
     expect(screen.getByText("Order System")).toBeInTheDocument();
-    expect(screen.getAllByText("OrderCell").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("OrderProject").length).toBeGreaterThan(0);
     expect(screen.getByText("CustomerApp")).toBeInTheDocument();
     expect(container.querySelector('[data-cell-shape="octagon"]')).toBeInTheDocument();
     expect(container.querySelector("[data-cell-title-placement]")).toHaveAttribute(
@@ -29,9 +30,34 @@ describe("App", () => {
     expect(container.querySelector('[data-gate-label="east"]')).toHaveAttribute("data-gate-placement", "outside");
     expect(container.querySelector('[data-gate-label="south"]')).toHaveTextContent("South");
     expect(container.querySelector('[data-gate-label="south"]')).toHaveAttribute("data-gate-placement", "outside");
-    expect(container.querySelector('[data-external-shape="circle"] small')).not.toBeInTheDocument();
+    expect(container.querySelector('[data-external-shape="circle"] small')).toBeInTheDocument();
     expect(container.querySelector(".react-flow__minimap")).not.toBeInTheDocument();
     expect(container.querySelectorAll("[data-gateway-bound]").length).toBe(4);
+  });
+
+  it("does not render a cell title label when metadata is absent", () => {
+    const timestamp = new Date().toISOString();
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        schemaVersion: 1,
+        activeDocumentId: "metadata-free",
+        documents: [
+          {
+            id: "metadata-free",
+            name: "Metadata Free",
+            source: "component API service\nnorth -> API",
+            createdAt: timestamp,
+            updatedAt: timestamp
+          }
+        ]
+      })
+    );
+
+    const { container } = render(<App />);
+
+    expect(screen.queryByText("undefined")).not.toBeInTheDocument();
+    expect(container.querySelector(".cell-boundary__title")).not.toBeInTheDocument();
   });
 
   it("shows parser diagnostics while preserving the workbench", async () => {
@@ -40,9 +66,11 @@ describe("App", () => {
 
     const editor = screen.getByLabelText("Cell DSL source");
     await user.clear(editor);
-    await user.type(editor, "title Broken\ncomponent API service\nAPI -> Missing");
+    await user.type(editor, "title Broken\ncomponent API service\nAPI -- Missing");
 
-    expect(screen.getByText("Internal dependency target \"Missing\" is not a defined component.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Unknown statement. Expected title, version, component, or dependency arrow.")
+    ).toBeInTheDocument();
     expect(screen.queryByText("Fix the DSL errors to render the diagram.")).not.toBeInTheDocument();
   });
 
@@ -87,7 +115,7 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Copy Metadata example" }));
 
-    expect(writeText).toHaveBeenCalledWith("title OrderCell\nversion v1");
+    expect(writeText).toHaveBeenCalledWith("title OrderProject\nversion v1");
   });
 
   it("prevents creating or duplicating more than ten diagrams", async () => {
@@ -150,7 +178,7 @@ describe("App", () => {
     expect(container.querySelector(".app-shell")).toHaveClass("app-shell--diagram-fullscreen");
     expect(screen.queryByRole("heading", { name: "Cell Architect" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Cell DSL source")).not.toBeInTheDocument();
-    expect(screen.getAllByText("OrderCell").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("OrderProject").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Exit fullscreen diagram" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Exit fullscreen diagram" }));

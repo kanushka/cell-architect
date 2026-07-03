@@ -6,22 +6,43 @@ const notationSections = [
   {
     title: "Metadata",
     detail: "Set the diagram title and optional version.",
-    code: "title OrderCell\nversion v1"
+    code: "title OrderProject\nversion v1"
   },
   {
     title: "Components",
-    detail: "Create internal components with a name and a type label.",
-    code: "component WebApp web-app\ncomponent OrderAPI api\ncomponent OrderService service\ncomponent OrderDB database"
+    detail: "Create internal components with an id, with or without a type.",
+    code: "component usersAPI\ncomponent WebApp web-app\ncomponent OrderService service"
+  },
+  {
+    title: "Boundary declarations",
+    detail: "Predeclare external systems on a boundary, with or without a type, then reference them in arrows.",
+    code: "north CustomerApp\neast InventoryAPI api\nsouth Stripe payment"
   },
   {
     title: "Internal dependencies",
-    detail: "Connect internal components. Add a label after a colon when the relationship needs context.",
-    code: "WebApp -> OrderAPI\nOrderAPI -> OrderService\nOrderService -> OrderDB\nOrderService -> EventPublisher : order.created"
+    detail: "Connect internal components inside the cell.",
+    code: "WebApp -> api\napi -> OrderService\nOrderService -> odb"
   },
   {
     title: "Boundary dependencies",
-    detail: "Use north, east, south, or west to place external systems around the cell boundary.",
-    code: "north CustomerApp -> WebApp : HTTPS\nwest AdminPortal -> OrderAPI : backoffice\nOrderService -> east InventoryCell : reserve stock\nOrderService -> south Stripe : payment"
+    detail: "Declared externals can be used in plain arrows. Inline boundary arrows still work too.",
+    code: "CustomerApp -> WebApp\nOrderService -> InventoryAPI\nnorth CustomerApp -> OrderAPI\nOrderService -> east InventoryCell"
+  },
+  {
+    title: "Gateway exposure",
+    detail: "Expose an internal component through a gateway when the external consumer is unknown.",
+    code: "north -> api\napi -> east"
+  },
+  {
+    title: "Aliases",
+    detail:
+      "Use \"as\" to set a display label on a component or external. A label is one word by default; wrap it in quotes for multiple words.",
+    code: "component api as OrderAPI\nsouth db as Datastore\ncomponent odb as \"Order Datastore\"\nsouth adb as \"Azure Postgre\" database"
+  },
+  {
+    title: "Labels in dependencies",
+    detail: "Add a label after a colon on any dependency arrow.",
+    code: "OrderService -> EventPublisher : order.created\nCustomerApp -> WebApp : HTTPS\nOrderService -> InventoryAPI : reserve stock"
   },
   {
     title: "Comments",

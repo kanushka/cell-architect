@@ -50,27 +50,43 @@ export function DiagramsPanel({
       <div className="diagrams-panel__header">
         <span>Diagrams</span>
         <div className="diagrams-panel__header-actions">
+          <button type="button" className="icon-button" aria-label="Close diagrams panel" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+      <div className="diagrams-panel__actions" role="group" aria-label="Diagram actions">
+        <div className="tooltip-control tooltip-control--wide">
           <button
             type="button"
-            className="icon-button"
+            className="diagrams-panel__action-button"
             aria-label="New diagram"
+            aria-describedby="new-diagram-tooltip"
             disabled={isAtDocumentLimit}
             onClick={onNewDocument}
           >
             <FilePlus2 size={16} />
+            <span>New</span>
           </button>
+          <span id="new-diagram-tooltip" role="tooltip" className="app-tooltip app-tooltip--panel">
+            Create a new diagram
+          </span>
+        </div>
+        <div className="tooltip-control tooltip-control--wide">
           <button
             type="button"
-            className="icon-button"
+            className="diagrams-panel__action-button"
             aria-label="Import .cell"
+            aria-describedby="import-diagram-tooltip"
             disabled={isAtDocumentLimit}
             onClick={onImportClick}
           >
             <Upload size={16} />
+            <span>Import</span>
           </button>
-          <button type="button" className="icon-button" aria-label="Close diagrams panel" onClick={onClose}>
-            <X size={16} />
-          </button>
+          <span id="import-diagram-tooltip" role="tooltip" className="app-tooltip app-tooltip--panel">
+            Import a .cell or .txt file
+          </span>
         </div>
       </div>
       <nav className="diagrams-panel__list" aria-label="Saved diagrams">

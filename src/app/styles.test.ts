@@ -15,6 +15,14 @@ describe("diagram interaction styles", () => {
     const highlightRule = styles.match(/\.connection-highlight-node \.component-node,[\s\S]*?\}/)?.[0] ?? "";
     expect(highlightRule).not.toContain("transform:");
   });
+
+  it("keeps component subtype labels in their original case", () => {
+    expect(ruleFor(".component-node small")).not.toContain("text-transform:");
+  });
+
+  it("uses the east orange border for API component circles", () => {
+    expect(ruleFor(".component-node--api")).toContain("border-color: var(--east);");
+  });
 });
 
 describe("canvas-first shell", () => {
@@ -35,6 +43,19 @@ describe("canvas-first shell", () => {
     expect(rule).toContain("position: absolute;");
     expect(rule).toContain("right:");
     expect(rule).toContain("--zoom-controls-height");
+  });
+
+  it("keeps the expanded editor toggle close to the diagram name input height", () => {
+    const rule = ruleFor(".editor-panel__toggle-button");
+    expect(rule).toContain("width: 34px;");
+    expect(rule).toContain("height: 34px;");
+  });
+
+  it("delays the New and Import tooltips on hover", () => {
+    const rule =
+      styles.match(/\.tooltip-control:hover \.app-tooltip--panel,[\s\S]*?\.tooltip-control:focus-within \.app-tooltip--panel \{[\s\S]*?\}/)?.[0] ?? "";
+
+    expect(rule).toContain("transition-delay: 350ms;");
   });
 });
 

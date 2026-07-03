@@ -38,18 +38,18 @@ describe("DiagramCanvas insets", () => {
 
     expect(fitViewSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        padding: expect.objectContaining({ left: "0px", right: "0px" })
+        padding: expect.objectContaining({ top: "112px", bottom: "112px", left: "0px", right: "0px" })
       })
     );
   });
 
-  it("reserves left/right padding matching the open overlay panels", () => {
+  it("adds left breathing room on top of the open editor inset", () => {
     const model = buildModel("component API service\nnorth -> API");
     render(<DiagramCanvas model={model} insets={{ left: 260, right: 220 }} />);
 
     expect(fitViewSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        padding: expect.objectContaining({ left: "260px", right: "220px" })
+        padding: expect.objectContaining({ left: "372px", right: "220px" })
       })
     );
   });
@@ -79,6 +79,15 @@ describe("DiagramCanvas insets", () => {
   });
 });
 
+describe("DiagramCanvas component styling", () => {
+  it("marks API components so they can use the same orange circle treatment as API externals", () => {
+    const model = buildModel("component books api");
+    render(<DiagramCanvas model={model} />);
+
+    expect(screen.getByText("books").closest(".component-node")).toHaveClass("component-node--api");
+  });
+});
+
 describe("DiagramCanvas zoom controls", () => {
   it("shows the current zoom level as a percentage", () => {
     const model = buildModel("component API service\nnorth -> API");
@@ -100,7 +109,7 @@ describe("DiagramCanvas zoom controls", () => {
     expect(zoomOutSpy).toHaveBeenCalledTimes(1);
     expect(fitViewSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        padding: expect.objectContaining({ left: "10px", right: "20px" })
+        padding: expect.objectContaining({ left: "122px", right: "20px" })
       })
     );
   });

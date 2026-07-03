@@ -54,7 +54,7 @@ describe("App", () => {
     expect(screen.getByLabelText("Diagram name")).toHaveValue("Untitled Cell");
   });
 
-  it("opens the DSL guide from its top-right button", async () => {
+  it("opens the DSL guide from its icon-only top-right button with a tooltip", async () => {
     const user = userEvent.setup();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
@@ -63,7 +63,11 @@ describe("App", () => {
     });
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: "Guide" }));
+    const guideButton = screen.getByRole("button", { name: "Open DSL guide" });
+    expect(guideButton).toHaveTextContent("");
+    expect(screen.getByRole("tooltip", { name: "DSL Guide" })).toBeInTheDocument();
+
+    await user.click(guideButton);
 
     expect(screen.getByRole("dialog", { name: "Cell DSL Guide" })).toBeInTheDocument();
   });

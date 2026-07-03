@@ -83,12 +83,20 @@ describe("DiagramsPanel", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("exposes New diagram and Import actions in the header", async () => {
+  it("shows New and Import actions in a row before the diagram tiles with tooltips", async () => {
     const user = userEvent.setup();
     const onNewDocument = vi.fn();
     const onImportClick = vi.fn();
 
     renderPanel({ onNewDocument, onImportClick });
+
+    const actionRow = screen.getByRole("group", { name: "Diagram actions" });
+    const diagramList = screen.getByRole("navigation", { name: "Saved diagrams" });
+    expect(actionRow.compareDocumentPosition(diagramList)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(actionRow).toHaveTextContent("New");
+    expect(actionRow).toHaveTextContent("Import");
+    expect(screen.getByRole("tooltip", { name: "Create a new diagram" })).toBeInTheDocument();
+    expect(screen.getByRole("tooltip", { name: "Import a .cell or .txt file" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "New diagram" }));
     expect(onNewDocument).toHaveBeenCalledTimes(1);

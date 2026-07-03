@@ -76,9 +76,20 @@ export function EditorPanel({
 
   if (collapsed) {
     return (
-      <button type="button" className="icon-button" aria-label="Expand editor" onClick={onToggleCollapsed}>
-        <Code2 size={18} />
-      </button>
+      <div className="tooltip-control">
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Expand editor"
+          aria-describedby="show-text-editor-tooltip"
+          onClick={onToggleCollapsed}
+        >
+          <Code2 size={18} />
+        </button>
+        <span id="show-text-editor-tooltip" role="tooltip" className="app-tooltip">
+          Show text editor
+        </span>
+      </div>
     );
   }
 
@@ -91,9 +102,20 @@ export function EditorPanel({
           value={documentName}
           onChange={(event) => onDocumentNameChange(event.target.value)}
         />
-        <button type="button" className="icon-button" aria-label="Collapse editor" onClick={onToggleCollapsed}>
-          <ChevronUp size={16} />
-        </button>
+        <div className="tooltip-control">
+          <button
+            type="button"
+            className="icon-button editor-panel__toggle-button"
+            aria-label="Collapse editor"
+            aria-describedby="hide-text-editor-tooltip"
+            onClick={onToggleCollapsed}
+          >
+            <ChevronUp size={16} />
+          </button>
+          <span id="hide-text-editor-tooltip" role="tooltip" className="app-tooltip">
+            Hide text editor
+          </span>
+        </div>
       </div>
       <SourceEditor value={source} onChange={onSourceChange} />
       <div className="editor-panel__diagnostics">

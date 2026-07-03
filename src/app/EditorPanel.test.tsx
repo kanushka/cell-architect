@@ -47,6 +47,7 @@ describe("EditorPanel", () => {
     expect(screen.queryByLabelText("Cell DSL source")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Diagram name")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Expand editor" })).toBeInTheDocument();
+    expect(screen.getByRole("tooltip", { name: "Show text editor" })).toBeInTheDocument();
   });
 
   it("calls onToggleCollapsed when the expand control is clicked", async () => {
@@ -61,6 +62,7 @@ describe("EditorPanel", () => {
     const user = userEvent.setup();
     const props = renderPanel();
 
+    expect(screen.getByRole("tooltip", { name: "Hide text editor" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Collapse editor" }));
     expect(props.onToggleCollapsed).toHaveBeenCalledTimes(1);
   });

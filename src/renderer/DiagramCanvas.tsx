@@ -64,9 +64,10 @@ function ComponentNode({ data }: NodeProps) {
   const nodeId = String(data.nodeId);
   const componentType =
     typeof data.componentType === "string" && data.componentType.trim() ? data.componentType : undefined;
+  const typeClassName = componentType?.trim().toLowerCase() === "api" ? " component-node--api" : "";
 
   return (
-    <div className="component-node" data-node-shape="circle" data-diagram-node-id={nodeId}>
+    <div className={`component-node${typeClassName}`} data-node-shape="circle" data-diagram-node-id={nodeId}>
       <Handle id="component-top-target" type="target" position={Position.Top} />
       <Handle id="component-top-source" type="source" position={Position.Top} />
       <Handle id="component-left-target" type="target" position={Position.Left} />
@@ -152,7 +153,8 @@ export interface DiagramCanvasInsets {
 }
 
 const DEFAULT_INSETS: DiagramCanvasInsets = { left: 0, right: 0 };
-const FIT_VIEW_VERTICAL_PADDING: `${number}px` = "72px";
+const FIT_VIEW_VERTICAL_PADDING: `${number}px` = "112px";
+const FIT_VIEW_LEFT_PADDING = 112;
 
 interface FitPadding {
   top: `${number}px`;
@@ -162,10 +164,12 @@ interface FitPadding {
 }
 
 function buildFitPadding(insets: DiagramCanvasInsets): FitPadding {
+  const leftPadding = insets.left > 0 ? insets.left + FIT_VIEW_LEFT_PADDING : 0;
+
   return {
     top: FIT_VIEW_VERTICAL_PADDING,
     bottom: FIT_VIEW_VERTICAL_PADDING,
-    left: `${insets.left}px`,
+    left: `${leftPadding}px`,
     right: `${insets.right}px`
   };
 }

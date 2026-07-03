@@ -142,10 +142,20 @@ export function App() {
       <div className="overlay overlay--top-right">
         <ShareButton />
         <HelpPanel />
-        <button type="button" className="pill-button" onClick={() => setGuideOpen(true)}>
-          <BookOpen size={15} />
-          <span>Guide</span>
-        </button>
+        <div className="tooltip-control">
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Open DSL guide"
+            aria-describedby="dsl-guide-tooltip"
+            onClick={() => setGuideOpen(true)}
+          >
+            <BookOpen size={16} />
+          </button>
+          <span id="dsl-guide-tooltip" role="tooltip" className="app-tooltip">
+            DSL Guide
+          </span>
+        </div>
         <button
           type="button"
           className="pill-button"

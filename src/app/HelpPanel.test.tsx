@@ -1,16 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { InfoPanel } from "./InfoPanel";
+import { HelpPanel } from "./HelpPanel";
 
-describe("InfoPanel", () => {
-  it("toggles a popover with the GitHub link, star ask, and storage note", async () => {
+describe("HelpPanel", () => {
+  it("toggles a popover with the GitHub link and storage note, without a star-the-repo link", async () => {
     const user = userEvent.setup();
-    render(<InfoPanel />);
+    render(<HelpPanel />);
 
     expect(screen.queryByRole("dialog", { name: "About Cell Architect" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Open info" }));
+    await user.click(screen.getByRole("button", { name: "Open help" }));
 
     const dialog = screen.getByRole("dialog", { name: "About Cell Architect" });
     expect(dialog).toBeInTheDocument();
@@ -18,15 +18,12 @@ describe("InfoPanel", () => {
       "href",
       "https://github.com/kanushka/cell-architect"
     );
-    expect(screen.getByRole("link", { name: /Star the repo/ })).toHaveAttribute(
-      "href",
-      "https://github.com/kanushka/cell-architect"
-    );
+    expect(screen.queryByRole("link", { name: /Star the repo/ })).not.toBeInTheDocument();
     expect(
       screen.getByText("Diagrams are stored in this browser only. You can keep up to 10 at a time.")
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Close info" }));
+    await user.click(screen.getByRole("button", { name: "Close help" }));
     expect(screen.queryByRole("dialog", { name: "About Cell Architect" })).not.toBeInTheDocument();
   });
 });

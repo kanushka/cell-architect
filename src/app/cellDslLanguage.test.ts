@@ -4,7 +4,7 @@ import { cellDslStreamParser } from "./cellDslLanguage";
 
 function tokenizeLine(line: string) {
   const stream = new StringStream(line, 4, 2);
-  const state = cellDslStreamParser.startState?.() ?? {};
+  const state = cellDslStreamParser.startState?.(4) ?? {};
   const tokens: Array<{ text: string; style: string | null }> = [];
 
   while (!stream.eol()) {

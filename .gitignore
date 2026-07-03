@@ -7,3 +7,6 @@ coverage
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
+
+# Brainstorming visual companion scratch
+.superpowers/

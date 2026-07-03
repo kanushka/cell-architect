@@ -1,4 +1,5 @@
 import CodeMirror from "@uiw/react-codemirror";
+import { cellDslLanguageExtension } from "./cellDslLanguage";
 import { SOURCE_EDITOR_BASIC_SETUP } from "./sourceEditorConfig";
 
 interface SourceEditorProps {
@@ -17,6 +18,7 @@ export function SourceEditor({ value, onChange }: SourceEditorProps) {
         height="100%"
         basicSetup={SOURCE_EDITOR_BASIC_SETUP}
         theme="light"
+        extensions={cellDslLanguageExtension}
         onChange={onChange}
         className="source-editor__codemirror"
       />

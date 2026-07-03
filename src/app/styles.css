@@ -551,12 +551,12 @@ button:disabled {
 
 .source-editor__codemirror .cm-activeLine,
 .source-editor__codemirror .cm-activeLineGutter {
-  background: #eaf4ff;
+  background: rgba(37, 99, 235, 0.06);
 }
 
 .source-editor__codemirror .cm-selectionBackground,
 .source-editor__codemirror .cm-focused .cm-selectionBackground {
-  background: #bfdbfe !important;
+  background: #93c5fd !important;
 }
 
 .source-editor__test-input {

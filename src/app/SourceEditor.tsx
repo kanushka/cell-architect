@@ -1,4 +1,5 @@
 import CodeMirror from "@uiw/react-codemirror";
+import { SOURCE_EDITOR_BASIC_SETUP } from "./sourceEditorConfig";
 
 interface SourceEditorProps {
   value: string;
@@ -14,11 +15,7 @@ export function SourceEditor({ value, onChange }: SourceEditorProps) {
       <CodeMirror
         value={value}
         height="100%"
-        basicSetup={{
-          lineNumbers: true,
-          foldGutter: false,
-          highlightActiveLine: true
-        }}
+        basicSetup={SOURCE_EDITOR_BASIC_SETUP}
         theme="light"
         onChange={onChange}
         className="source-editor__codemirror"

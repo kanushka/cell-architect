@@ -22,3 +22,15 @@ describe("diagram interaction styles", () => {
     expect(listRule).toContain("overflow-y: auto;");
   });
 });
+
+describe("source editor interaction styles", () => {
+  it("makes text selections more prominent than the active cursor line", () => {
+    const activeLineRule = styles.match(/\.source-editor__codemirror \.cm-activeLine,[\s\S]*?\}/)?.[0] ?? "";
+    const selectionRule =
+      styles.match(/\.source-editor__codemirror \.cm-selectionBackground,[\s\S]*?\}/)?.[0] ?? "";
+
+    expect(activeLineRule).toContain("rgba(37, 99, 235, 0.06)");
+    expect(selectionRule).toContain("#93c5fd");
+    expect(selectionRule).toContain("!important");
+  });
+});

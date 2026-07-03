@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { HelpPanel } from "./HelpPanel";
@@ -24,6 +24,23 @@ describe("HelpPanel", () => {
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Close help" }));
+    expect(screen.queryByRole("dialog", { name: "About Cell Architect" })).not.toBeInTheDocument();
+  });
+
+  it("closes the popover when clicking outside it", async () => {
+    const user = userEvent.setup();
+    render(
+      <div>
+        <HelpPanel />
+        <button type="button">Elsewhere</button>
+      </div>
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open help" }));
+    expect(screen.getByRole("dialog", { name: "About Cell Architect" })).toBeInTheDocument();
+
+    fireEvent.mouseDown(screen.getByRole("button", { name: "Elsewhere" }));
+
     expect(screen.queryByRole("dialog", { name: "About Cell Architect" })).not.toBeInTheDocument();
   });
 });

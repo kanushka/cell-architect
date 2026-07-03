@@ -1,13 +1,17 @@
 import { Github, HelpCircle, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useClickOutside } from "./useClickOutside";
 
 const REPO_URL = "https://github.com/kanushka/cell-architect";
 
 export function HelpPanel() {
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useClickOutside(containerRef, () => setOpen(false), open);
 
   return (
-    <div className="help-panel">
+    <div className="help-panel" ref={containerRef}>
       <button
         type="button"
         className="icon-button"

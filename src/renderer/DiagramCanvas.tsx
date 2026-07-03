@@ -152,7 +152,7 @@ export interface DiagramCanvasInsets {
 }
 
 const DEFAULT_INSETS: DiagramCanvasInsets = { left: 0, right: 0 };
-const FIT_VIEW_VERTICAL_PADDING: `${number}px` = "40px";
+const FIT_VIEW_VERTICAL_PADDING: `${number}px` = "72px";
 
 interface FitPadding {
   top: `${number}px`;

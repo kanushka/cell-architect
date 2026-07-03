@@ -4,22 +4,37 @@ import { describe, expect, it } from "vitest";
 
 const styles = readFileSync(join(process.cwd(), "src/app/styles.css"), "utf8");
 
+function ruleFor(selector: string) {
+  const escaped = selector.replace(/[.#[\]]/g, (match) => `\\${match}`);
+  const pattern = new RegExp(`${escaped} \\{[\\s\\S]*?\\}`);
+  return styles.match(pattern)?.[0] ?? "";
+}
+
 describe("diagram interaction styles", () => {
   it("does not resize nodes while highlighting connections", () => {
     const highlightRule = styles.match(/\.connection-highlight-node \.component-node,[\s\S]*?\}/)?.[0] ?? "";
-
     expect(highlightRule).not.toContain("transform:");
   });
+});
 
-  it("keeps the diagram rail list scrollable when many diagrams are saved", () => {
-    const railRule = styles.match(/\.document-rail \{[\s\S]*?\}/)?.[0] ?? "";
-    const listRule = styles.match(/\.document-list \{[\s\S]*?\}/)?.[0] ?? "";
+describe("canvas-first shell", () => {
+  it("makes the app shell a full-bleed, fixed-position stage", () => {
+    const rule = ruleFor(".app-shell");
+    expect(rule).toContain("position: fixed;");
+    expect(rule).toContain("inset: 0;");
+    expect(rule).toContain("overflow: hidden;");
+  });
 
-    expect(railRule).toContain("display: grid;");
-    expect(railRule).toContain("grid-template-rows:");
-    expect(railRule).toContain("height: 100vh;");
-    expect(listRule).toContain("min-height: 0;");
-    expect(listRule).toContain("overflow-y: auto;");
+  it("positions the top-left, top-right, and bottom-right overlays as absolute layers", () => {
+    expect(ruleFor(".overlay--top-left")).toContain("position: absolute;");
+    expect(ruleFor(".overlay--top-right")).toContain("position: absolute;");
+    expect(ruleFor(".overlay--bottom-right")).toContain("position: absolute;");
+  });
+
+  it("floats the diagrams panel on the right edge, spanning the viewport height", () => {
+    const rule = ruleFor(".diagrams-panel");
+    expect(rule).toContain("position: absolute;");
+    expect(rule).toContain("right:");
   });
 });
 
@@ -32,24 +47,5 @@ describe("source editor interaction styles", () => {
     expect(activeLineRule).toContain("rgba(37, 99, 235, 0.06)");
     expect(selectionRule).toContain("#93c5fd");
     expect(selectionRule).toContain("!important");
-  });
-});
-
-describe("fullscreen diagram layout styles", () => {
-  it("pins the fullscreen diagram to the viewport instead of page scroll position", () => {
-    const shellRule = styles.match(/\.app-shell--diagram-fullscreen \{[\s\S]*?\}/)?.[0] ?? "";
-    const railRule = styles.match(/\.app-shell--diagram-fullscreen \.document-rail \{[\s\S]*?\}/)?.[0] ?? "";
-    const workbenchRule = styles.match(/\.app-shell--diagram-fullscreen \.workbench \{[\s\S]*?\}/)?.[0] ?? "";
-    const splitRule = styles.match(/\.split-editor--diagram-fullscreen \{[\s\S]*?\}/)?.[0] ?? "";
-    const paneRule = styles.match(/\.split-editor--diagram-fullscreen \.canvas-pane \{[\s\S]*?\}/)?.[0] ?? "";
-
-    expect(shellRule).toContain("position: fixed;");
-    expect(shellRule).toContain("inset: 0;");
-    expect(shellRule).toContain("overflow: hidden;");
-    expect(railRule).toContain("display: none;");
-    expect(workbenchRule).toContain("padding: 0;");
-    expect(splitRule).toContain("height: 100vh;");
-    expect(paneRule).toContain("height: 100vh;");
-    expect(paneRule).toContain("min-height: 100vh;");
   });
 });

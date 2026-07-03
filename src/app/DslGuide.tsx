@@ -20,13 +20,15 @@ const notationSections = [
   },
   {
     title: "Internal dependencies",
-    detail: "Connect internal components inside the cell.",
-    code: "WebApp -> api\napi -> OrderService\nOrderService -> odb"
+    detail:
+      "Declare components, then connect them. You can also skip the declaration and let Cell Architect infer a plain component.",
+    code: "component api\ncomponent OrderService\n\napi -> OrderService"
   },
   {
     title: "Boundary dependencies",
-    detail: "Declared externals can be used in plain arrows. Inline boundary arrows still work too.",
-    code: "CustomerApp -> WebApp\nOrderService -> InventoryAPI\nnorth CustomerApp -> OrderAPI\nOrderService -> east InventoryCell"
+    detail:
+      "Declare an external, then connect it. You can also skip the declaration and create the dependency inline.",
+    code: "north CustomerApp\neast InventoryAPI\n\nCustomerApp -> WebApp\nOrderService -> InventoryAPI\nnorth PartnerPortal -> OrderAPI\nOrderService -> east InventoryCell"
   },
   {
     title: "Gateway exposure",

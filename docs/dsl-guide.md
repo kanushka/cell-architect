@@ -76,26 +76,38 @@ west
 
 ## Internal Dependencies
 
-Create a dependency between two components inside the cell:
+Declare the components, then create a dependency between them:
+
+```cell
+component api
+component OrderService
+
+api -> OrderService
+```
+
+You don't have to declare a component first. If a component id appears on the internal side of a dependency and was never declared, Cell Architect infers it as a plain internal component:
 
 ```cell
 api -> OrderService
 ```
 
-If either component was not declared, it is created as an inferred internal component.
+Declaring a component first is only needed when you want more than the plain id — a type, or an alias (display name, see [Aliases](#aliases)).
 
 ## Boundary Dependencies
 
 North and west boundaries are inbound; links on these boundaries must flow into the cell. East and south boundaries are outbound; links on these boundaries must flow out of the cell.
 
-Create a dependency to or from a declared external system:
+Declare the external system, then create a dependency to or from it:
 
 ```cell
+north CustomerApp
+east InventoryAPI
+
 CustomerApp -> WebApp
 OrderService -> InventoryAPI
 ```
 
-The external system can be declared first, or you can create the dependency inline without predeclaring it:
+You don't have to declare the external system first. You can create the dependency inline and Cell Architect creates the external for you:
 
 ```cell
 north CustomerApp -> OrderAPI
@@ -110,6 +122,8 @@ The inline format is:
 ```
 
 The external system is rendered outside the cell. The link enters or exits through the gateway on that boundary.
+
+Declaring the external system first is only needed when you want more than the plain id — a type, or an alias (display name, see [Aliases](#aliases)).
 
 ## Gateway Exposures
 

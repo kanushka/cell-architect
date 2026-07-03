@@ -6,6 +6,7 @@ import {
   Position,
   ReactFlow,
   ReactFlowProvider,
+  useReactFlow,
   type Edge,
   type EdgeProps,
   type Node,
@@ -144,11 +145,41 @@ function sameConnectionIds(left: string[], right: string[]) {
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
-interface DiagramCanvasProps {
-  model: CellDiagramModel | null;
+export interface DiagramCanvasInsets {
+  left: number;
+  right: number;
 }
 
-export function DiagramCanvas({ model }: DiagramCanvasProps) {
+const DEFAULT_INSETS: DiagramCanvasInsets = { left: 0, right: 0 };
+const FIT_VIEW_VERTICAL_PADDING = "40px";
+
+function buildFitPadding(insets: DiagramCanvasInsets) {
+  return {
+    top: FIT_VIEW_VERTICAL_PADDING,
+    bottom: FIT_VIEW_VERTICAL_PADDING,
+    left: `${insets.left}px`,
+    right: `${insets.right}px`
+  };
+}
+
+function FitViewController({ insets, model }: { insets: DiagramCanvasInsets; model: CellDiagramModel }) {
+  const { fitView } = useReactFlow();
+
+  useEffect(() => {
+    fitView({ padding: buildFitPadding(insets), duration: 200 });
+    // model is only used to re-trigger the fit when the diagram data itself changes
+    // (switching documents), not on every re-render (e.g. focus-click highlighting).
+  }, [insets.left, insets.right, fitView, model]);
+
+  return null;
+}
+
+interface DiagramCanvasProps {
+  model: CellDiagramModel | null;
+  insets?: DiagramCanvasInsets;
+}
+
+export function DiagramCanvas({ model, insets = DEFAULT_INSETS }: DiagramCanvasProps) {
   const [activeConnectionIds, setActiveConnectionIds] = useState<string[]>([]);
   const flow = useMemo<ReturnType<typeof toReactFlow>>(
     () => (model ? toReactFlow(model) : { nodes: [], edges: [], cellSize: { width: 0, height: 0 } }),
@@ -226,8 +257,6 @@ export function DiagramCanvas({ model }: DiagramCanvasProps) {
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.18 }}
         minZoom={0.25}
         maxZoom={1.35}
         nodesDraggable={false}
@@ -237,6 +266,7 @@ export function DiagramCanvas({ model }: DiagramCanvasProps) {
         onNodeClick={(_, node) => setActiveConnections(getConnectionIdsForNode(node.id))}
         onPaneClick={() => setActiveConnections([])}
       >
+        <FitViewController insets={insets} model={model} />
         <Background color="#cbd5e1" gap={22} />
         <Controls showInteractive={false} />
         <div className="focus-hint" data-focus-mode={isFocusView ? "active" : "idle"}>

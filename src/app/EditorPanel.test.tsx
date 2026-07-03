@@ -41,11 +41,20 @@ describe("EditorPanel", () => {
     expect(screen.queryByText("No parser issues. The diagram is generated from this source.")).not.toBeInTheDocument();
   });
 
-  it("hides the editor body when collapsed and shows the expand control", () => {
+  it("hides the entire panel when collapsed, showing only the expand control", () => {
     renderPanel({ collapsed: true });
 
     expect(screen.queryByLabelText("Cell DSL source")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Diagram name")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Expand editor" })).toBeInTheDocument();
+  });
+
+  it("calls onToggleCollapsed when the expand control is clicked", async () => {
+    const user = userEvent.setup();
+    const props = renderPanel({ collapsed: true });
+
+    await user.click(screen.getByRole("button", { name: "Expand editor" }));
+    expect(props.onToggleCollapsed).toHaveBeenCalledTimes(1);
   });
 
   it("calls onToggleCollapsed when the collapse/expand control is clicked", async () => {

@@ -4,7 +4,7 @@ export const DIAGRAMS_PANEL_WIDTH = 260;
 
 export const EDITOR_MIN_WIDTH = 260;
 export const EDITOR_MAX_WIDTH = 560;
-export const EDITOR_DEFAULT_WIDTH = 320;
+export const EDITOR_DEFAULT_WIDTH = 380;
 
 export const EDITOR_MIN_HEIGHT = 240;
 export const EDITOR_MAX_HEIGHT = 720;

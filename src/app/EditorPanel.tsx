@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronUp, Code2 } from "lucide-react";
 import { useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { Diagnostic } from "../domain/cellModel";
 import {
@@ -74,11 +74,16 @@ export function EditorPanel({
     window.addEventListener("mouseup", handleResizeEnd);
   }
 
+  if (collapsed) {
+    return (
+      <button type="button" className="icon-button" aria-label="Expand editor" onClick={onToggleCollapsed}>
+        <Code2 size={18} />
+      </button>
+    );
+  }
+
   return (
-    <div
-      className={collapsed ? "editor-panel editor-panel--collapsed" : "editor-panel"}
-      style={{ width, height: collapsed ? undefined : height }}
-    >
+    <div className="editor-panel" style={{ width, height }}>
       <div className="editor-panel__header">
         <input
           aria-label="Diagram name"
@@ -86,41 +91,32 @@ export function EditorPanel({
           value={documentName}
           onChange={(event) => onDocumentNameChange(event.target.value)}
         />
-        <button
-          type="button"
-          className="icon-button"
-          aria-label={collapsed ? "Expand editor" : "Collapse editor"}
-          onClick={onToggleCollapsed}
-        >
-          {collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+        <button type="button" className="icon-button" aria-label="Collapse editor" onClick={onToggleCollapsed}>
+          <ChevronUp size={16} />
         </button>
       </div>
-      {collapsed ? null : (
-        <>
-          <SourceEditor value={source} onChange={onSourceChange} />
-          <div className="editor-panel__diagnostics">
-            {diagnostics.length === 0 ? (
-              <p>No parser issues. The diagram is generated from this source.</p>
-            ) : (
-              diagnostics.map((diagnostic) => (
-                <p key={`${diagnostic.line}-${diagnostic.column}-${diagnostic.message}`}>
-                  <strong>
-                    Line {diagnostic.line}, col {diagnostic.column}
-                  </strong>
-                  {diagnostic.message}
-                </p>
-              ))
-            )}
-          </div>
-          <div
-            className="editor-panel__resize-handle"
-            role="separator"
-            aria-orientation="horizontal"
-            aria-label="Resize editor panel"
-            onMouseDown={handleResizeStart}
-          />
-        </>
-      )}
+      <SourceEditor value={source} onChange={onSourceChange} />
+      <div className="editor-panel__diagnostics">
+        {diagnostics.length === 0 ? (
+          <p>No parser issues. The diagram is generated from this source.</p>
+        ) : (
+          diagnostics.map((diagnostic) => (
+            <p key={`${diagnostic.line}-${diagnostic.column}-${diagnostic.message}`}>
+              <strong>
+                Line {diagnostic.line}, col {diagnostic.column}
+              </strong>
+              {diagnostic.message}
+            </p>
+          ))
+        )}
+      </div>
+      <div
+        className="editor-panel__resize-handle"
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="Resize editor panel"
+        onMouseDown={handleResizeStart}
+      />
     </div>
   );
 }

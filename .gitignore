@@ -10,3 +10,4 @@ vite.config.d.ts
 
 # Brainstorming visual companion scratch
 .superpowers/
+.worktrees/

@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { compileCellSource } from "../compiler/compileCellSource";
 
@@ -76,5 +76,39 @@ describe("DiagramCanvas insets", () => {
     rerender(<DiagramCanvas model={model} insets={{ left: 0, right: 0 }} />);
 
     expect(fitViewSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("DiagramCanvas zoom controls", () => {
+  it("shows the current zoom level as a percentage", () => {
+    const model = buildModel("component API service\nnorth -> API");
+    render(<DiagramCanvas model={model} />);
+
+    expect(screen.getByText("100%")).toBeInTheDocument();
+  });
+
+  it("wires the zoom in, zoom out, and fit buttons to the React Flow instance", () => {
+    const model = buildModel("component API service\nnorth -> API");
+    render(<DiagramCanvas model={model} insets={{ left: 10, right: 20 }} />);
+    fitViewSpy.mockClear();
+
+    fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+    fireEvent.click(screen.getByRole("button", { name: "Zoom out" }));
+    fireEvent.click(screen.getByRole("button", { name: "Fit diagram to view" }));
+
+    expect(zoomInSpy).toHaveBeenCalledTimes(1);
+    expect(zoomOutSpy).toHaveBeenCalledTimes(1);
+    expect(fitViewSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        padding: expect.objectContaining({ left: "10px", right: "20px" })
+      })
+    );
+  });
+
+  it("no longer renders the default React Flow controls widget", () => {
+    const model = buildModel("component API service\nnorth -> API");
+    const { container } = render(<DiagramCanvas model={model} />);
+
+    expect(container.querySelector(".react-flow__controls")).not.toBeInTheDocument();
   });
 });

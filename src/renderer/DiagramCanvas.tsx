@@ -1,12 +1,12 @@
 import {
   Background,
-  Controls,
   EdgeLabelRenderer,
   Handle,
   Position,
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
+  useViewport,
   type Edge,
   type EdgeProps,
   type Node,
@@ -14,6 +14,7 @@ import {
   getBezierPath
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { Maximize2, Minus, Plus } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { CellDiagramModel } from "../domain/cellModel";
 import { toReactFlow } from "./flowLayout";
@@ -174,6 +175,31 @@ function FitViewController({ insets, model }: { insets: DiagramCanvasInsets; mod
   return null;
 }
 
+function ZoomControls({ insets }: { insets: DiagramCanvasInsets }) {
+  const { zoomIn, zoomOut, fitView } = useReactFlow();
+  const { zoom } = useViewport();
+
+  return (
+    <div className="zoom-controls">
+      <button type="button" className="zoom-controls__button" aria-label="Zoom out" onClick={() => zoomOut()}>
+        <Minus size={14} />
+      </button>
+      <span className="zoom-controls__level">{Math.round(zoom * 100)}%</span>
+      <button type="button" className="zoom-controls__button" aria-label="Zoom in" onClick={() => zoomIn()}>
+        <Plus size={14} />
+      </button>
+      <button
+        type="button"
+        className="zoom-controls__button zoom-controls__button--fit"
+        aria-label="Fit diagram to view"
+        onClick={() => fitView({ padding: buildFitPadding(insets), duration: 200 })}
+      >
+        <Maximize2 size={14} />
+      </button>
+    </div>
+  );
+}
+
 interface DiagramCanvasProps {
   model: CellDiagramModel | null;
   insets?: DiagramCanvasInsets;
@@ -268,7 +294,7 @@ export function DiagramCanvas({ model, insets = DEFAULT_INSETS }: DiagramCanvasP
       >
         <FitViewController insets={insets} model={model} />
         <Background color="#cbd5e1" gap={22} />
-        <Controls showInteractive={false} />
+        <ZoomControls insets={insets} />
         <div className="focus-hint" data-focus-mode={isFocusView ? "active" : "idle"}>
           {isFocusView
             ? "Focus view: click outside or press Esc to return to the full diagram."

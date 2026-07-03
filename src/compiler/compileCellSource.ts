@@ -3,71 +3,144 @@ import {
   CellDiagramModel,
   CompileResult,
   Diagnostic,
+  ExternalNode,
+  ParsedComponent,
   ParsedEdge
 } from "../domain/cellModel";
 import { parseCellDsl } from "../parser/parseCellDsl";
 
-function endpointColumn(lineText: string, endpoint: string) {
-  const index = lineText.indexOf(endpoint);
-  return index === -1 ? 1 : index + 1;
+const boundaryDirections = new Set<string>(["north", "east", "south", "west"]);
+const inboundDirections = new Set<string>(["north", "west"]);
+const outboundDirections = new Set<string>(["east", "south"]);
+
+function edgeId(direction: string, source: string, target: string, line: number) {
+  return `${direction}-${source}-${target}-${line}`;
 }
 
-function validateEdge(edge: ParsedEdge, componentIds: Set<string>, lines: string[]): Diagnostic[] {
-  const lineText = lines[edge.line - 1] ?? "";
+function isBoundaryDirection(value: string): value is BoundaryDirection {
+  return boundaryDirections.has(value);
+}
 
-  if (edge.kind === "internal") {
-    const diagnostics: Diagnostic[] = [];
+function directionLabel(direction: string) {
+  return direction.charAt(0).toUpperCase() + direction.slice(1);
+}
 
-    if (!componentIds.has(edge.source)) {
-      diagnostics.push({
-        severity: "error",
-        message: `Internal dependency source "${edge.source}" is not a defined component.`,
-        line: edge.line,
-        column: endpointColumn(lineText, edge.source)
-      });
-    }
+function createLookup(items: Array<ParsedComponent | ExternalNode>) {
+  const lookup = new Map<string, string>();
+  const duplicates = new Set<string>();
 
-    if (!componentIds.has(edge.target)) {
-      diagnostics.push({
-        severity: "error",
-        message: `Internal dependency target "${edge.target}" is not a defined component.`,
-        line: edge.line,
-        column: endpointColumn(lineText, edge.target)
-      });
-    }
+  items.forEach((item) => {
+    [item.id, item.label].filter(Boolean).forEach((key) => {
+      const name = String(key);
+      if (lookup.has(name) && lookup.get(name) !== item.id) {
+        duplicates.add(name);
+        lookup.delete(name);
+        return;
+      }
 
-    return diagnostics;
+      if (!duplicates.has(name)) {
+        lookup.set(name, item.id);
+      }
+    });
+  });
+
+  return lookup;
+}
+
+function normalizeEdge(
+  edge: ParsedEdge,
+  componentLookup: Map<string, string>,
+  externalLookup: Map<string, string>,
+  externalMap: Map<string, ExternalNode>
+): ParsedEdge {
+  const source =
+    edge.kind === "exposure" && isBoundaryDirection(edge.source)
+      ? edge.source
+      : componentLookup.get(edge.source) ?? externalLookup.get(edge.source) ?? edge.source;
+  const target =
+    edge.kind === "exposure" && isBoundaryDirection(edge.target)
+      ? edge.target
+      : componentLookup.get(edge.target) ?? externalLookup.get(edge.target) ?? edge.target;
+  const sourceExternal = externalMap.get(externalLookup.get(edge.source) ?? edge.source);
+  const targetExternal = externalMap.get(externalLookup.get(edge.target) ?? edge.target);
+
+  if (edge.kind === "internal" && sourceExternal && !targetExternal) {
+    return {
+      ...edge,
+      id: edgeId(sourceExternal.direction, sourceExternal.id, target, edge.line),
+      source: sourceExternal.id,
+      target,
+      direction: sourceExternal.direction,
+      kind: "inbound"
+    };
   }
 
-  if (edge.kind === "inbound" && !componentIds.has(edge.target)) {
+  if (edge.kind === "internal" && targetExternal && !sourceExternal) {
+    return {
+      ...edge,
+      id: edgeId(targetExternal.direction, source, targetExternal.id, edge.line),
+      source,
+      target: targetExternal.id,
+      direction: targetExternal.direction,
+      kind: "outbound"
+    };
+  }
+
+  return {
+    ...edge,
+    source,
+    target
+  };
+}
+
+function validateEdgeDirection(edge: ParsedEdge): Diagnostic[] {
+  if (edge.kind === "inbound" && !inboundDirections.has(edge.direction)) {
     return [
       {
         severity: "error",
-        message: `Inbound dependency target "${edge.target}" is not a defined component.`,
+        message: `${directionLabel(edge.direction)} boundary connections must flow out of the cell.`,
         line: edge.line,
-        column: endpointColumn(lineText, edge.target)
+        column: 1
       }
     ];
   }
 
-  if (edge.kind === "outbound" && !componentIds.has(edge.source)) {
+  if (edge.kind === "outbound" && !outboundDirections.has(edge.direction)) {
     return [
       {
         severity: "error",
-        message: `Outbound dependency source "${edge.source}" is not a defined component.`,
+        message: `${directionLabel(edge.direction)} boundary connections must flow into the cell.`,
         line: edge.line,
-        column: endpointColumn(lineText, edge.source)
+        column: 1
       }
     ];
   }
 
-  if (edge.kind === "exposure" && !componentIds.has(edge.source)) {
+  if (edge.kind !== "exposure") {
+    return [];
+  }
+
+  const startsAtGateway = edge.source === edge.direction && isBoundaryDirection(edge.source);
+  const endsAtGateway = edge.target === edge.direction && isBoundaryDirection(edge.target);
+
+  if (startsAtGateway && !inboundDirections.has(edge.direction)) {
     return [
       {
         severity: "error",
-        message: `Gateway exposure source "${edge.source}" is not a defined component.`,
+        message: `${directionLabel(edge.direction)} boundary connections must flow out of the cell. Use "${edge.target} -> ${edge.direction}".`,
         line: edge.line,
-        column: endpointColumn(lineText, edge.source)
+        column: 1
+      }
+    ];
+  }
+
+  if (endsAtGateway && !outboundDirections.has(edge.direction)) {
+    return [
+      {
+        severity: "error",
+        message: `${directionLabel(edge.direction)} boundary connections must flow into the cell. Use "${edge.direction} -> ${edge.source}".`,
+        line: edge.line,
+        column: 1
       }
     ];
   }
@@ -75,37 +148,74 @@ function validateEdge(edge: ParsedEdge, componentIds: Set<string>, lines: string
   return [];
 }
 
+function inferredComponents(components: ParsedComponent[], edges: ParsedEdge[]) {
+  const componentMap = new Map<string, ParsedComponent>(components.map((component) => [component.id, component]));
+
+  function ensureComponent(id: string) {
+    if (!componentMap.has(id)) {
+      componentMap.set(id, { id });
+    }
+  }
+
+  edges.forEach((edge) => {
+    if (edge.kind === "internal") {
+      ensureComponent(edge.source);
+      ensureComponent(edge.target);
+      return;
+    }
+
+    if (edge.kind === "inbound") {
+      ensureComponent(edge.target);
+      return;
+    }
+
+    if (edge.kind === "outbound" || edge.kind === "exposure") {
+      if (isBoundaryDirection(edge.source)) {
+        ensureComponent(edge.target);
+      } else {
+        ensureComponent(edge.source);
+      }
+    }
+  });
+
+  return Array.from(componentMap.values());
+}
+
 export function compileCellSource(source: string): CompileResult {
   const parsed = parseCellDsl(source);
-  const componentIds = new Set(parsed.document.components.map((component) => component.id));
-  const lines = source.split(/\r?\n/);
-  const diagnostics = [
-    ...parsed.diagnostics,
-    ...parsed.document.edges.flatMap((edge) => validateEdge(edge, componentIds, lines))
-  ];
+  const componentLookup = createLookup(parsed.document.components);
+  const declaredExternalMap = new Map<string, ExternalNode>(
+    parsed.document.externals.map((external) => [external.id, external])
+  );
+  const externalLookup = createLookup(parsed.document.externals);
+  const normalizedEdges = parsed.document.edges.map((edge) =>
+    normalizeEdge(edge, componentLookup, externalLookup, declaredExternalMap)
+  );
+  const components = inferredComponents(parsed.document.components, normalizedEdges);
+  const diagnostics = [...parsed.diagnostics, ...normalizedEdges.flatMap(validateEdgeDirection)];
 
   if (diagnostics.length > 0) {
     return { model: null, diagnostics };
   }
 
-  const externalMap = new Map<string, BoundaryDirection>();
+  const externalMap = new Map<string, ExternalNode>(declaredExternalMap);
 
-  parsed.document.edges.forEach((edge) => {
+  normalizedEdges.forEach((edge) => {
     if (edge.kind === "inbound" && edge.direction !== "internal") {
-      externalMap.set(edge.source, edge.direction);
+      externalMap.set(edge.source, externalMap.get(edge.source) ?? { id: edge.source, direction: edge.direction, line: edge.line });
     }
 
     if (edge.kind === "outbound" && edge.direction !== "internal") {
-      externalMap.set(edge.target, edge.direction);
+      externalMap.set(edge.target, externalMap.get(edge.target) ?? { id: edge.target, direction: edge.direction, line: edge.line });
     }
   });
 
   const model: CellDiagramModel = {
     title: parsed.document.title,
     version: parsed.document.version,
-    components: parsed.document.components,
-    externals: Array.from(externalMap.entries()).map(([id, direction]) => ({ id, direction })),
-    edges: parsed.document.edges
+    components,
+    externals: Array.from(externalMap.values()),
+    edges: normalizedEdges
   };
 
   return { model, diagnostics: [] };

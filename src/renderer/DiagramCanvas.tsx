@@ -21,6 +21,8 @@ import { connectionIdsForNode, edgeConnectionId, highlightedNodeIdsForConnection
 function CellBoundaryNode({ data }: NodeProps) {
   const width = Number(data.width);
   const height = Number(data.height);
+  const title = typeof data.title === "string" && data.title.trim() ? data.title : undefined;
+  const version = typeof data.version === "string" && data.version.trim() ? data.version : undefined;
 
   return (
     <div className="cell-boundary" data-cell-shape="octagon" style={{ width, height }}>
@@ -34,10 +36,12 @@ function CellBoundaryNode({ data }: NodeProps) {
           vectorEffect="non-scaling-stroke"
         />
       </svg>
-      <div className="cell-boundary__title" data-cell-title-placement="northwest-outside">
-        <span>{String(data.title)}</span>
-        {data.version ? <small>{String(data.version)}</small> : null}
-      </div>
+      {title || version ? (
+        <div className="cell-boundary__title" data-cell-title-placement="northwest-outside">
+          {title ? <span>{title}</span> : null}
+          {version ? <small>{version}</small> : null}
+        </div>
+      ) : null}
       <div className="cell-gate-label cell-gate-label--north" data-gate-label="north" data-gate-placement="outside">
         North
       </div>
@@ -56,6 +60,8 @@ function CellBoundaryNode({ data }: NodeProps) {
 
 function ComponentNode({ data }: NodeProps) {
   const nodeId = String(data.nodeId);
+  const componentType =
+    typeof data.componentType === "string" && data.componentType.trim() ? data.componentType : undefined;
 
   return (
     <div className="component-node" data-node-shape="circle" data-diagram-node-id={nodeId}>
@@ -64,7 +70,7 @@ function ComponentNode({ data }: NodeProps) {
       <Handle id="component-left-target" type="target" position={Position.Left} />
       <Handle id="component-left-source" type="source" position={Position.Left} />
       <span>{String(data.label)}</span>
-      <small>{String(data.componentType)}</small>
+      {componentType ? <small>{componentType}</small> : null}
       <Handle id="component-right-source" type="source" position={Position.Right} />
       <Handle id="component-bottom-source" type="source" position={Position.Bottom} />
     </div>
@@ -80,6 +86,7 @@ function ExternalNode({ data }: NodeProps) {
       <Handle id="external-left-target" type="target" position={Position.Left} />
       <Handle id="external-top-target" type="target" position={Position.Top} />
       <span>{String(data.label)}</span>
+      {data.externalType ? <small>{String(data.externalType)}</small> : null}
       <Handle id="external-right-source" type="source" position={Position.Right} />
       <Handle id="external-bottom-source" type="source" position={Position.Bottom} />
     </div>

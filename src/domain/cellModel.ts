@@ -11,8 +11,17 @@ export interface Diagnostic {
 
 export interface ParsedComponent {
   id: string;
-  type: string;
-  line: number;
+  label?: string;
+  type?: string;
+  line?: number;
+}
+
+export interface ParsedExternal {
+  id: string;
+  direction: BoundaryDirection;
+  label?: string;
+  type?: string;
+  line?: number;
 }
 
 export interface ParsedEdge {
@@ -26,19 +35,17 @@ export interface ParsedEdge {
 }
 
 export interface ParsedCellDocument {
-  title: string;
+  title?: string;
   version?: string;
   components: ParsedComponent[];
+  externals: ParsedExternal[];
   edges: ParsedEdge[];
 }
 
-export interface ExternalNode {
-  id: string;
-  direction: BoundaryDirection;
-}
+export type ExternalNode = ParsedExternal;
 
 export interface CellDiagramModel {
-  title: string;
+  title?: string;
   version?: string;
   components: ParsedComponent[];
   externals: ExternalNode[];

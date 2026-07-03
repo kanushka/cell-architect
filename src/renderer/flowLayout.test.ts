@@ -172,12 +172,20 @@ describe("toReactFlow", () => {
       externals: [],
       edges: [
         {
-          id: "north-API-north-5",
-          source: "API",
-          target: "north",
+          id: "north-north-API-5",
+          source: "north",
+          target: "API",
           direction: "north",
           kind: "exposure",
           line: 5
+        },
+        {
+          id: "east-API-east-6",
+          source: "API",
+          target: "east",
+          direction: "east",
+          kind: "exposure",
+          line: 6
         }
       ]
     };
@@ -190,22 +198,109 @@ describe("toReactFlow", () => {
           id: "gateway-north",
           type: "gateway",
           data: expect.objectContaining({ direction: "north" })
+        }),
+        expect.objectContaining({
+          id: "gateway-east",
+          type: "gateway",
+          data: expect.objectContaining({ direction: "east" })
         })
       ])
     );
     expect(flow.nodes.some((node) => node.id.startsWith("external-"))).toBe(false);
-    expect(flow.edges).toEqual([
-      expect.objectContaining({
-        id: "north-API-north-5-component-gateway",
-        data: expect.objectContaining({
-          connectionId: "north-API-north-5",
-        connectedNodeIds: ["API", "gateway-north"]
+    expect(flow.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "north-north-API-5-gateway-component",
+          data: expect.objectContaining({
+            connectionId: "north-north-API-5",
+            connectedNodeIds: ["gateway-north", "API"]
+          }),
+          source: "gateway-north",
+          sourceHandle: "gateway-bottom-source",
+          target: "API",
+          targetHandle: "component-top-target"
         }),
-        source: "API",
-        sourceHandle: "component-top-source",
-        target: "gateway-north",
-        targetHandle: "gateway-top-target"
+        expect.objectContaining({
+          id: "east-API-east-6-component-gateway",
+          data: expect.objectContaining({
+            connectionId: "east-API-east-6",
+            connectedNodeIds: ["API", "gateway-east"]
+          }),
+          source: "API",
+          sourceHandle: "component-right-source",
+          target: "gateway-east",
+          targetHandle: "gateway-left-target"
+        })
+      ])
+    );
+  });
+
+  it("draws internal dependencies as arrows with a small arrow head", () => {
+    const model: CellDiagramModel = {
+      components: [
+        { id: "WebApp", type: "web-app", line: 1 },
+        { id: "OrderAPI", type: "api", line: 2 }
+      ],
+      externals: [],
+      edges: [
+        {
+          id: "internal-WebApp-OrderAPI-3",
+          source: "WebApp",
+          target: "OrderAPI",
+          direction: "internal",
+          kind: "internal",
+          line: 3
+        }
+      ]
+    };
+
+    const flow = toReactFlow(model);
+    const internalEdge = flow.edges.find((edge) => edge.id === "internal-WebApp-OrderAPI-3");
+
+    expect(internalEdge?.markerEnd).toEqual(
+      expect.objectContaining({
+        type: "arrowclosed",
+        width: 14,
+        height: 14
       })
-    ]);
+    );
+  });
+
+  it("uses display labels and external types from declarations", () => {
+    const model: CellDiagramModel = {
+      components: [{ id: "api", label: "OrderAPI", type: "api", line: 1 }],
+      externals: [{ id: "inv", label: "InventoryAPI", type: "api", direction: "east", line: 2 }],
+      edges: [
+        {
+          id: "east-api-inv-3",
+          source: "api",
+          target: "inv",
+          direction: "east",
+          kind: "outbound",
+          line: 3
+        }
+      ]
+    };
+
+    const flow = toReactFlow(model);
+
+    expect(flow.nodes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "api",
+          data: expect.objectContaining({
+            label: "OrderAPI",
+            componentType: "api"
+          })
+        }),
+        expect.objectContaining({
+          id: "external-inv",
+          data: expect.objectContaining({
+            label: "InventoryAPI",
+            externalType: "api"
+          })
+        })
+      ])
+    );
   });
 });

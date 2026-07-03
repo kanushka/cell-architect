@@ -16,22 +16,22 @@ describe("highlightModel", () => {
 
     expect(connectionIds).toEqual(
       expect.arrayContaining([
-        "internal-OrderAPI-OrderService-15",
-        "internal-OrderService-OrderDB-16",
-        "internal-OrderService-EventPublisher-17",
-        "east-OrderService-InventoryCell-19",
-        "east-OrderService-CustomerCell-20",
-        "south-OrderService-Stripe-21",
-        "south-OrderService-SendGrid-22"
+        "internal-api-OrderService-23",
+        "internal-OrderService-odb-24",
+        "internal-OrderService-EventPublisher-25",
+        "east-OrderService-InventoryAPI-27",
+        "east-OrderService-CustomerCell-28",
+        "south-OrderService-Stripe-29",
+        "south-OrderService-SendGrid-30"
       ])
     );
     expect(Array.from(highlightedNodeIds)).toEqual(
       expect.arrayContaining([
         "OrderService",
-        "OrderDB",
+        "odb",
         "EventPublisher",
         "gateway-east",
-        "external-InventoryCell",
+        "external-InventoryAPI",
         "gateway-south",
         "external-Stripe"
       ])

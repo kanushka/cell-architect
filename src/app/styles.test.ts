@@ -34,3 +34,22 @@ describe("source editor interaction styles", () => {
     expect(selectionRule).toContain("!important");
   });
 });
+
+describe("fullscreen diagram layout styles", () => {
+  it("pins the fullscreen diagram to the viewport instead of page scroll position", () => {
+    const shellRule = styles.match(/\.app-shell--diagram-fullscreen \{[\s\S]*?\}/)?.[0] ?? "";
+    const railRule = styles.match(/\.app-shell--diagram-fullscreen \.document-rail \{[\s\S]*?\}/)?.[0] ?? "";
+    const workbenchRule = styles.match(/\.app-shell--diagram-fullscreen \.workbench \{[\s\S]*?\}/)?.[0] ?? "";
+    const splitRule = styles.match(/\.split-editor--diagram-fullscreen \{[\s\S]*?\}/)?.[0] ?? "";
+    const paneRule = styles.match(/\.split-editor--diagram-fullscreen \.canvas-pane \{[\s\S]*?\}/)?.[0] ?? "";
+
+    expect(shellRule).toContain("position: fixed;");
+    expect(shellRule).toContain("inset: 0;");
+    expect(shellRule).toContain("overflow: hidden;");
+    expect(railRule).toContain("display: none;");
+    expect(workbenchRule).toContain("padding: 0;");
+    expect(splitRule).toContain("height: 100vh;");
+    expect(paneRule).toContain("height: 100vh;");
+    expect(paneRule).toContain("min-height: 100vh;");
+  });
+});

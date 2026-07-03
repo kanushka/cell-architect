@@ -1,5 +1,5 @@
 import dagre from "@dagrejs/dagre";
-import type { Edge, Node } from "@xyflow/react";
+import { MarkerType, type Edge, type Node } from "@xyflow/react";
 import { CellDiagramModel } from "../domain/cellModel";
 
 type FlowNodeData = Record<string, unknown>;
@@ -247,7 +247,7 @@ export function toReactFlow(model: CellDiagramModel) {
       position: { x: origin.x + x, y: origin.y + y },
       data: {
         nodeId: component.id,
-        label: component.id,
+        label: component.label ?? component.id,
         componentType: component.type
       },
       draggable: false
@@ -299,7 +299,8 @@ export function toReactFlow(model: CellDiagramModel) {
       },
       data: {
         nodeId: `external-${external.id}`,
-        label: external.id,
+        label: external.label ?? external.id,
+        externalType: external.type,
         direction: external.direction
       },
       draggable: false
@@ -321,6 +322,11 @@ export function toReactFlow(model: CellDiagramModel) {
           label: edge.label,
           type: "smoothstep",
           animated: false,
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            width: 14,
+            height: 14
+          },
           className: `edge-${edge.direction}`
         }
       ];
@@ -359,6 +365,26 @@ export function toReactFlow(model: CellDiagramModel) {
 
     if (edge.kind === "exposure") {
       const gatewayId = `gateway-${edge.direction}`;
+      const startsAtGateway = edge.source === edge.direction;
+
+      if (startsAtGateway) {
+        const data = connectionData(edge.id, [gatewayId, edge.target]);
+        return [
+          {
+            id: `${edge.id}-gateway-component`,
+            data,
+            source: gatewayId,
+            sourceHandle: gatewaySourceHandle(edge.direction),
+            target: edge.target,
+            targetHandle: componentHandle(edge.direction, "target"),
+            label: edge.label,
+            type: "smoothstep",
+            animated: true,
+            className: `edge-${edge.direction}`
+          }
+        ];
+      }
+
       const data = connectionData(edge.id, [edge.source, gatewayId]);
       return [
         {

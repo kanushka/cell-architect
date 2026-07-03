@@ -1,11 +1,12 @@
 import {
   Background,
-  Controls,
   EdgeLabelRenderer,
   Handle,
   Position,
   ReactFlow,
   ReactFlowProvider,
+  useReactFlow,
+  useViewport,
   type Edge,
   type EdgeProps,
   type Node,
@@ -13,6 +14,7 @@ import {
   getBezierPath
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { Maximize2, Minus, Plus } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { CellDiagramModel } from "../domain/cellModel";
 import { toReactFlow } from "./flowLayout";
@@ -62,9 +64,10 @@ function ComponentNode({ data }: NodeProps) {
   const nodeId = String(data.nodeId);
   const componentType =
     typeof data.componentType === "string" && data.componentType.trim() ? data.componentType : undefined;
+  const typeClassName = componentType?.trim().toLowerCase() === "api" ? " component-node--api" : "";
 
   return (
-    <div className="component-node" data-node-shape="circle" data-diagram-node-id={nodeId}>
+    <div className={`component-node${typeClassName}`} data-node-shape="circle" data-diagram-node-id={nodeId}>
       <Handle id="component-top-target" type="target" position={Position.Top} />
       <Handle id="component-top-source" type="source" position={Position.Top} />
       <Handle id="component-left-target" type="target" position={Position.Left} />
@@ -144,11 +147,77 @@ function sameConnectionIds(left: string[], right: string[]) {
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
-interface DiagramCanvasProps {
-  model: CellDiagramModel | null;
+export interface DiagramCanvasInsets {
+  left: number;
+  right: number;
 }
 
-export function DiagramCanvas({ model }: DiagramCanvasProps) {
+const DEFAULT_INSETS: DiagramCanvasInsets = { left: 0, right: 0 };
+const FIT_VIEW_VERTICAL_PADDING: `${number}px` = "112px";
+const FIT_VIEW_LEFT_PADDING = 112;
+
+interface FitPadding {
+  top: `${number}px`;
+  bottom: `${number}px`;
+  left: `${number}px`;
+  right: `${number}px`;
+}
+
+function buildFitPadding(insets: DiagramCanvasInsets): FitPadding {
+  const leftPadding = insets.left > 0 ? insets.left + FIT_VIEW_LEFT_PADDING : 0;
+
+  return {
+    top: FIT_VIEW_VERTICAL_PADDING,
+    bottom: FIT_VIEW_VERTICAL_PADDING,
+    left: `${leftPadding}px`,
+    right: `${insets.right}px`
+  };
+}
+
+function FitViewController({ insets, model }: { insets: DiagramCanvasInsets; model: CellDiagramModel }) {
+  const { fitView } = useReactFlow();
+  const { left, right } = insets;
+
+  useEffect(() => {
+    fitView({ padding: buildFitPadding({ left, right }), duration: 200 });
+    // model is only used to re-trigger the fit when the diagram data itself changes
+    // (switching documents), not on every re-render (e.g. focus-click highlighting).
+  }, [left, right, fitView, model]);
+
+  return null;
+}
+
+function ZoomControls({ insets }: { insets: DiagramCanvasInsets }) {
+  const { zoomIn, zoomOut, fitView } = useReactFlow();
+  const { zoom } = useViewport();
+
+  return (
+    <div className="zoom-controls">
+      <button type="button" className="zoom-controls__button" aria-label="Zoom out" onClick={() => zoomOut()}>
+        <Minus size={14} />
+      </button>
+      <span className="zoom-controls__level">{Math.round(zoom * 100)}%</span>
+      <button type="button" className="zoom-controls__button" aria-label="Zoom in" onClick={() => zoomIn()}>
+        <Plus size={14} />
+      </button>
+      <button
+        type="button"
+        className="zoom-controls__button zoom-controls__button--fit"
+        aria-label="Fit diagram to view"
+        onClick={() => fitView({ padding: buildFitPadding(insets), duration: 200 })}
+      >
+        <Maximize2 size={14} />
+      </button>
+    </div>
+  );
+}
+
+interface DiagramCanvasProps {
+  model: CellDiagramModel | null;
+  insets?: DiagramCanvasInsets;
+}
+
+export function DiagramCanvas({ model, insets = DEFAULT_INSETS }: DiagramCanvasProps) {
   const [activeConnectionIds, setActiveConnectionIds] = useState<string[]>([]);
   const flow = useMemo<ReturnType<typeof toReactFlow>>(
     () => (model ? toReactFlow(model) : { nodes: [], edges: [], cellSize: { width: 0, height: 0 } }),
@@ -226,8 +295,6 @@ export function DiagramCanvas({ model }: DiagramCanvasProps) {
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.18 }}
         minZoom={0.25}
         maxZoom={1.35}
         nodesDraggable={false}
@@ -237,8 +304,9 @@ export function DiagramCanvas({ model }: DiagramCanvasProps) {
         onNodeClick={(_, node) => setActiveConnections(getConnectionIdsForNode(node.id))}
         onPaneClick={() => setActiveConnections([])}
       >
+        <FitViewController insets={insets} model={model} />
         <Background color="#cbd5e1" gap={22} />
-        <Controls showInteractive={false} />
+        <ZoomControls insets={insets} />
         <div className="focus-hint" data-focus-mode={isFocusView ? "active" : "idle"}>
           {isFocusView
             ? "Focus view: click outside or press Esc to return to the full diagram."

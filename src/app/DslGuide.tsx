@@ -120,8 +120,14 @@ export function DslGuide({ onClose }: DslGuideProps) {
   }
 
   return (
-    <div className="guide-backdrop">
-      <section className="guide-dialog" role="dialog" aria-modal="true" aria-labelledby="dsl-guide-title">
+    <div className="guide-backdrop" onClick={onClose}>
+      <section
+        className="guide-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dsl-guide-title"
+        onClick={(event) => event.stopPropagation()}
+      >
         <header className="guide-header">
           <div>
             <p>Quick reference</p>

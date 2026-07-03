@@ -51,6 +51,8 @@ button:disabled {
 }
 
 .app-shell .react-flow {
+  position: absolute;
+  inset: 0;
   background: #f8fafc;
 }
 

@@ -11,27 +11,29 @@ describe("highlightModel", () => {
     expect(compiled.model).not.toBeNull();
 
     const flow = toReactFlow(compiled.model!);
-    const connectionIds = connectionIdsForNode(flow.edges, "OrderService");
+    const connectionIds = connectionIdsForNode(flow.edges, "orders");
     const highlightedNodeIds = highlightedNodeIdsForConnections(flow.edges, new Set(connectionIds));
 
     expect(connectionIds).toEqual(
       expect.arrayContaining([
-        "internal-api-OrderService-23",
-        "internal-OrderService-odb-24",
-        "internal-OrderService-EventPublisher-25",
-        "east-OrderService-InventoryAPI-27",
-        "east-OrderService-CustomerCell-28",
-        "south-OrderService-Stripe-29",
-        "south-OrderService-SendGrid-30"
+        "north-pp-orders-15",
+        "west-ap-orders-16",
+        "internal-WebApp-orders-18",
+        "internal-orders-odb-19",
+        "internal-orders-ep-20",
+        "east-orders-inventories-22",
+        "east-orders-customers-23",
+        "south-orders-Stripe-24",
+        "south-orders-SendGrid-25"
       ])
     );
     expect(Array.from(highlightedNodeIds)).toEqual(
       expect.arrayContaining([
-        "OrderService",
+        "orders",
         "odb",
-        "EventPublisher",
+        "ep",
         "gateway-east",
-        "external-InventoryAPI",
+        "external-inventories",
         "gateway-south",
         "external-Stripe"
       ])

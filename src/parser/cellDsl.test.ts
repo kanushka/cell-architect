@@ -273,7 +273,16 @@ describe("compileCellSource", () => {
     const result = compileCellSource(defaultSampleSource);
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.model?.title).toBe("OrderProject");
+    expect(result.model?.components.map((component) => component.id)).toEqual(["WebApp", "orders", "odb", "ep"]);
+    expect(result.model?.externals.map((external) => `${external.direction}:${external.id}`)).toEqual([
+      "north:ca",
+      "north:pp",
+      "west:ap",
+      "east:inventories",
+      "east:customers",
+      "south:Stripe",
+      "south:SendGrid"
+    ]);
   });
 
   it("creates a normalized model and external nodes for the order system sample", () => {

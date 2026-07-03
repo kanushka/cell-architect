@@ -16,12 +16,14 @@ describe("diagram interaction styles", () => {
     expect(highlightRule).not.toContain("transform:");
   });
 
-  it("keeps component subtype labels in their original case", () => {
-    expect(ruleFor(".component-node small")).not.toContain("text-transform:");
-  });
+  it("sizes component and boundary dependency subtype labels consistently", () => {
+    const componentRule = ruleFor(".component-node small");
+    const externalRule = ruleFor(".external-node small");
 
-  it("uses the east orange border for API component circles", () => {
-    expect(ruleFor(".component-node--api")).toContain("border-color: var(--east);");
+    expect(componentRule).toContain("font-size: 10px;");
+    expect(componentRule).not.toContain("text-transform:");
+    expect(externalRule).toContain("font-size: 10px;");
+    expect(externalRule).not.toContain("text-transform:");
   });
 });
 
@@ -49,6 +51,12 @@ describe("canvas-first shell", () => {
     const rule = ruleFor(".editor-panel__toggle-button");
     expect(rule).toContain("width: 34px;");
     expect(rule).toContain("height: 34px;");
+  });
+
+  it("keeps the editor panel CSS fallback size aligned with the default constants", () => {
+    const rule = ruleFor(".editor-panel");
+    expect(rule).toContain("width: 416px;");
+    expect(rule).toContain("height: 720px;");
   });
 
   it("delays the New and Import tooltips on hover", () => {

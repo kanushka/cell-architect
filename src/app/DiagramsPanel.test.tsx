@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { DiagramDocument } from "../storage/documentRepository";
@@ -102,5 +102,17 @@ describe("DiagramsPanel", () => {
 
     expect(screen.getByRole("button", { name: "New diagram" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Import .cell" })).toBeDisabled();
+  });
+
+  it("closes the row menu when clicking outside it", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByRole("button", { name: "More actions for Order System" }));
+    expect(screen.getByRole("menuitem", { name: "Duplicate" })).toBeInTheDocument();
+
+    fireEvent.mouseDown(screen.getByText("Diagrams"));
+
+    expect(screen.queryByRole("menuitem", { name: "Duplicate" })).not.toBeInTheDocument();
   });
 });

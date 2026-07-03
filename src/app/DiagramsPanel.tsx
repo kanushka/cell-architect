@@ -1,5 +1,5 @@
 import { Copy, Download, Eye, FilePlus2, MoreVertical, Trash2, Upload, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DiagramDocument } from "../storage/documentRepository";
 
 interface DiagramsPanelProps {
@@ -28,6 +28,22 @@ export function DiagramsPanel({
   onClose
 }: DiagramsPanelProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!openMenuId) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".diagrams-panel__menu-button") && !target.closest(".diagrams-panel__menu")) {
+        setOpenMenuId(null);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [openMenuId]);
 
   return (
     <div className="diagrams-panel">

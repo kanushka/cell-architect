@@ -158,19 +158,20 @@ function buildFitPadding(insets: DiagramCanvasInsets) {
   return {
     top: FIT_VIEW_VERTICAL_PADDING,
     bottom: FIT_VIEW_VERTICAL_PADDING,
-    left: `${insets.left}px`,
-    right: `${insets.right}px`
+    left: `${insets.left}px` as `${number}px`,
+    right: `${insets.right}px` as `${number}px`
   };
 }
 
 function FitViewController({ insets, model }: { insets: DiagramCanvasInsets; model: CellDiagramModel }) {
   const { fitView } = useReactFlow();
+  const { left, right } = insets;
 
   useEffect(() => {
-    fitView({ padding: buildFitPadding(insets), duration: 200 });
+    fitView({ padding: buildFitPadding({ left, right }), duration: 200 });
     // model is only used to re-trigger the fit when the diagram data itself changes
     // (switching documents), not on every re-render (e.g. focus-click highlighting).
-  }, [insets.left, insets.right, fitView, model]);
+  }, [left, right, fitView, model]);
 
   return null;
 }

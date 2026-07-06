@@ -49,7 +49,7 @@ const notationSections: NotationSection[] = [
       },
       {
         label: "Without declaration (inline)",
-        code: "north PartnerPortal -> OrderAPI\nOrderService -> east InventoryCell"
+        code: "north PartnerPortal -> OrderAPI\nOrderService -> east InventoryAPI"
       }
     ]
   },

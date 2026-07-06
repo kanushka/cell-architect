@@ -111,7 +111,7 @@ You don't have to declare the external system first. You can create the dependen
 
 ```cell
 north CustomerApp -> OrderAPI
-OrderService -> east InventoryCell
+OrderService -> east InventoryAPI
 ```
 
 The inline format is:
@@ -192,7 +192,7 @@ OrderService -> EventPublisher : order.created
 CustomerApp -> WebApp : HTTPS
 OrderService -> InventoryAPI : reserve stock
 north CustomerApp -> OrderAPI : REST
-OrderService -> east InventoryCell : reserve stock
+OrderService -> east InventoryAPI : reserve stock
 ```
 
 The label renders on the link in the diagram.

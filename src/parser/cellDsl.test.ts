@@ -20,7 +20,7 @@ OrderAPI -> OrderService
 OrderService -> OrderDB
 OrderService -> EventPublisher : order.created
 
-OrderService -> east InventoryCell : reserve stock
+OrderService -> east InventoryAPI : reserve stock
 OrderService -> south Stripe : payment`;
 
 describe("parseCellDsl", () => {
@@ -109,9 +109,9 @@ north -> usersAPI`);
         line: 16
       },
       {
-        id: "east-OrderService-InventoryCell-18",
+        id: "east-OrderService-InventoryAPI-18",
         source: "OrderService",
-        target: "InventoryCell",
+        target: "InventoryAPI",
         direction: "east",
         kind: "outbound",
         label: "reserve stock",
@@ -303,7 +303,7 @@ describe("compileCellSource", () => {
     expect(result.model?.externals.map((external) => `${external.direction}:${external.id}`)).toEqual([
       "north:CustomerApp",
       "west:AdminPortal",
-      "east:InventoryCell",
+      "east:InventoryAPI",
       "south:Stripe"
     ]);
   });

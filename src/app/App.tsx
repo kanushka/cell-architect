@@ -1,7 +1,8 @@
 import { BookOpen } from "lucide-react";
-import { ChangeEvent, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { compileCellSource } from "../compiler/compileCellSource";
 import { DiagramCanvas } from "../renderer/DiagramCanvas";
+import { clearShareUrl, decodeShareSource, readShareParam } from "../share/shareLink";
 import {
   createDocument,
   deleteDocument,
@@ -13,11 +14,14 @@ import {
   saveDocument
 } from "../storage/documentRepository";
 import { computeCanvasInsets, EDITOR_DEFAULT_WIDTH } from "./layoutConstants";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { DiagramsPanel } from "./DiagramsPanel";
 import { DslGuide } from "./DslGuide";
 import { EditorPanel } from "./EditorPanel";
 import { HelpPanel } from "./HelpPanel";
+import { Modal } from "./Modal";
 import { ShareButton } from "./ShareButton";
+import { ShareImportDialog } from "./ShareImportDialog";
 import "./styles.css";
 
 function downloadText(filename: string, content: string) {
@@ -30,13 +34,53 @@ function downloadText(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
+interface PendingShare {
+  name: string;
+  source: string;
+}
+
 export function App() {
   const [repository, setRepository] = useState(() => loadRepository());
   const [editorOpen, setEditorOpen] = useState(true);
   const [editorWidth, setEditorWidth] = useState(EDITOR_DEFAULT_WIDTH);
   const [diagramsOpen, setDiagramsOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<DiagramDocument | null>(null);
+  const [pendingShare, setPendingShare] = useState<PendingShare | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    function processShareLink() {
+      const param = readShareParam();
+      if (!param) {
+        return;
+      }
+
+      clearShareUrl();
+      const source = decodeShareSource(param);
+
+      if (!source) {
+        setShareError("This share link is invalid or corrupted.");
+        return;
+      }
+
+      const name = compileCellSource(source).model?.title || "Shared Cell";
+      const state = loadRepository();
+
+      if (state.documents.length < MAX_DOCUMENTS) {
+        createDocument(name, source);
+        setRepository(loadRepository());
+        return;
+      }
+
+      setPendingShare({ name, source });
+    }
+
+    processShareLink();
+    window.addEventListener("hashchange", processShareLink);
+    return () => window.removeEventListener("hashchange", processShareLink);
+  }, []);
 
   const activeDocument =
     repository.documents.find((document) => document.id === repository.activeDocumentId) ?? repository.documents[0];
@@ -92,16 +136,32 @@ export function App() {
   }
 
   function handleDelete(document: DiagramDocument) {
-    if (!window.confirm(`Delete "${document.name}"? This cannot be undone.`)) {
+    setDeleteTarget(document);
+  }
+
+  function confirmDelete() {
+    if (!deleteTarget) {
       return;
     }
 
-    deleteDocument(document.id);
+    deleteDocument(deleteTarget.id);
+    setDeleteTarget(null);
     refreshRepository();
   }
 
   function handleExport(document: DiagramDocument) {
     downloadText(`${document.name || "cell-diagram"}.cell`, document.source);
+  }
+
+  function handleDeleteAndSaveShared(document: DiagramDocument) {
+    if (!pendingShare) {
+      return;
+    }
+
+    deleteDocument(document.id);
+    createDocument(pendingShare.name, pendingShare.source);
+    setPendingShare(null);
+    refreshRepository();
   }
 
   async function handleImport(event: ChangeEvent<HTMLInputElement>) {
@@ -140,7 +200,7 @@ export function App() {
       </div>
 
       <div className="overlay overlay--top-right">
-        <ShareButton />
+        <ShareButton source={activeDocument.source} />
         <HelpPanel />
         <div className="tooltip-control">
           <button
@@ -184,6 +244,36 @@ export function App() {
       <input ref={fileInputRef} type="file" accept=".cell,.txt" hidden onChange={handleImport} />
 
       {guideOpen ? <DslGuide onClose={() => setGuideOpen(false)} /> : null}
+
+      {deleteTarget ? (
+        <ConfirmDialog
+          title="Delete diagram"
+          message={`Delete "${deleteTarget.name}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      ) : null}
+
+      {pendingShare ? (
+        <ShareImportDialog
+          documents={repository.documents}
+          onExport={handleExport}
+          onDeleteAndSave={handleDeleteAndSaveShared}
+          onCancel={() => setPendingShare(null)}
+        />
+      ) : null}
+
+      {shareError ? (
+        <Modal title="Share link error" onClose={() => setShareError(null)}>
+          <p>{shareError}</p>
+          <div className="modal-actions">
+            <button type="button" className="pill-button" onClick={() => setShareError(null)}>
+              Close
+            </button>
+          </div>
+        </Modal>
+      ) : null}
     </main>
   );
 }

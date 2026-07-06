@@ -1,3 +1,5 @@
+<img src="public/logo.svg" alt="Cell Architect logo" width="48" height="48" />
+
 # Cell Architect
 
 Cell Architect is a browser-based workbench for drawing cell architecture diagrams from a small text DSL. It works like a split editor: write notation on the left, inspect the generated diagram on the right, and keep diagrams saved in the browser's local storage.

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cell-architect.web.app/sitemap.xml

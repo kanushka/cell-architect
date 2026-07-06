@@ -91,7 +91,6 @@ describe("App", () => {
 
   it("duplicates, exports, and deletes a diagram from the diagrams panel", async () => {
     const user = userEvent.setup();
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: "Diagrams" }));
@@ -103,7 +102,10 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "More actions for Order System" }));
     await user.click(screen.getByRole("menuitem", { name: "Delete" }));
 
-    expect(confirm).toHaveBeenCalledWith('Delete "Order System"? This cannot be undone.');
+    const dialog = screen.getByRole("dialog", { name: "Delete diagram" });
+    expect(dialog).toHaveTextContent('Delete "Order System"? This cannot be undone.');
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
     expect(screen.queryByText("Order System", { selector: "strong" })).not.toBeInTheDocument();
   });
 
@@ -123,10 +125,13 @@ describe("App", () => {
     expect(screen.getByRole("menuitem", { name: "Duplicate" })).toBeDisabled();
   });
 
-  it("shows a disabled Share button with a coming-soon tooltip", () => {
+  it("opens the share dialog with a copyable link", async () => {
+    const user = userEvent.setup();
     render(<App />);
 
-    expect(screen.getByRole("button", { name: "Share" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Share" }));
+
+    expect(screen.getByRole("dialog", { name: "Share diagram" })).toBeInTheDocument();
   });
 
   it("shows the help popover with the repo link", async () => {

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { compileCellSource } from "../compiler/compileCellSource";
 
 export const fitViewSpy = vi.fn();
@@ -30,6 +30,10 @@ describe("DiagramCanvas insets", () => {
     fitViewSpy.mockClear();
     zoomInSpy.mockClear();
     zoomOutSpy.mockClear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("defaults to zero padding when no insets are supplied", () => {
@@ -76,6 +80,43 @@ describe("DiagramCanvas insets", () => {
     rerender(<DiagramCanvas model={model} insets={{ left: 0, right: 0 }} />);
 
     expect(fitViewSpy).not.toHaveBeenCalled();
+  });
+
+  it("re-fits when the visible layout key changes", () => {
+    const model = buildModel("component API service\nnorth -> API");
+    const { rerender } = render(<DiagramCanvas model={model} insets={{ left: 0, right: 0 }} fitKey="mobile-code" />);
+    fitViewSpy.mockClear();
+
+    rerender(<DiagramCanvas model={model} insets={{ left: 0, right: 0 }} fitKey="mobile-diagram" />);
+
+    expect(fitViewSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        padding: expect.objectContaining({ left: "0px", right: "0px" })
+      })
+    );
+  });
+
+  it("schedules a post-paint re-fit when the visible layout key changes", () => {
+    const model = buildModel("component API service\nnorth -> API");
+    let postPaintFit: FrameRequestCallback | undefined;
+    const requestAnimationFrameSpy = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      postPaintFit = callback;
+      return 1;
+    });
+    vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => undefined);
+
+    const { rerender } = render(<DiagramCanvas model={model} insets={{ left: 0, right: 0 }} fitKey="mobile-code" />);
+    fitViewSpy.mockClear();
+    requestAnimationFrameSpy.mockClear();
+
+    rerender(<DiagramCanvas model={model} insets={{ left: 0, right: 0 }} fitKey="mobile-diagram" />);
+
+    expect(requestAnimationFrameSpy).toHaveBeenCalledTimes(1);
+    expect(fitViewSpy).toHaveBeenCalledTimes(1);
+
+    postPaintFit?.(0);
+
+    expect(fitViewSpy).toHaveBeenCalledTimes(2);
   });
 });
 

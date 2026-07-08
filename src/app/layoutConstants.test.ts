@@ -7,7 +7,8 @@ import {
   EDITOR_MAX_HEIGHT,
   EDITOR_MAX_WIDTH,
   EDITOR_MIN_HEIGHT,
-  EDITOR_MIN_WIDTH
+  EDITOR_MIN_WIDTH,
+  shouldUseTabbedWorkbench
 } from "./layoutConstants";
 
 describe("clamp", () => {
@@ -52,5 +53,31 @@ describe("computeCanvasInsets", () => {
   it("reserves both sides when both panels are open", () => {
     const insets = computeCanvasInsets({ editorOpen: true, editorWidth: 400, diagramsOpen: true });
     expect(insets).toEqual({ left: 14 + 400 + 24, right: 14 + 260 + 24 });
+  });
+
+  it("does not reserve desktop panel space in mobile layout", () => {
+    const insets = computeCanvasInsets({
+      editorOpen: true,
+      editorWidth: 400,
+      diagramsOpen: true,
+      layoutMode: "mobile"
+    });
+    expect(insets).toEqual({ left: 0, right: 0 });
+  });
+});
+
+describe("shouldUseTabbedWorkbench", () => {
+  it("uses the original desktop workbench when the screen is wider than 2.5 editor widths", () => {
+    expect(shouldUseTabbedWorkbench({ screenWidth: 1200, editorWidth: EDITOR_DEFAULT_WIDTH })).toBe(false);
+  });
+
+  it("uses the tabbed workbench when the screen is not wider than 2.5 editor widths", () => {
+    expect(shouldUseTabbedWorkbench({ screenWidth: 1040, editorWidth: EDITOR_DEFAULT_WIDTH })).toBe(true);
+    expect(shouldUseTabbedWorkbench({ screenWidth: 1024, editorWidth: EDITOR_DEFAULT_WIDTH })).toBe(true);
+  });
+
+  it("accounts for the current resized editor width", () => {
+    expect(shouldUseTabbedWorkbench({ screenWidth: 1180, editorWidth: 560 })).toBe(true);
+    expect(shouldUseTabbedWorkbench({ screenWidth: 1180, editorWidth: 416 })).toBe(false);
   });
 });

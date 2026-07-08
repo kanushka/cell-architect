@@ -67,6 +67,37 @@ describe("canvas-first shell", () => {
   });
 });
 
+describe("mobile workbench layout", () => {
+  it("hides the mobile tab bar outside the mobile breakpoint", () => {
+    const rule = ruleFor(".mobile-tab-bar");
+    expect(rule).toContain("display: none;");
+  });
+
+  it("defines mobile tab, editor, and diagram rules under the phone breakpoint", () => {
+    const mobileRule = styles.match(/@media \(max-width: 640px\) \{[\s\S]*?\.guide-backdrop/)?.[0] ?? "";
+
+    expect(mobileRule).toContain(".mobile-tab-bar");
+    expect(mobileRule).toContain('.app-shell[data-mobile-tab="code"] .react-flow');
+    expect(mobileRule).toContain('.app-shell[data-mobile-tab="code"] .overlay--top-right');
+    expect(mobileRule).toContain('.app-shell[data-mobile-tab="diagram"] .overlay--top-left');
+    expect(mobileRule).toContain(".editor-panel");
+    expect(mobileRule).toContain(".diagrams-panel");
+  });
+
+  it("keeps the hidden code-tab canvas measurable for React Flow fitting", () => {
+    const tabbedCodeCanvasRule =
+      styles.match(/\.app-shell\[data-layout-mode="mobile"\]\[data-mobile-tab="code"\] \.react-flow \{[\s\S]*?\}/)?.[0] ??
+      "";
+    const phoneCodeCanvasRule =
+      styles.match(/\.app-shell\[data-mobile-tab="code"\] \.react-flow \{[\s\S]*?\}/)?.[0] ?? "";
+
+    expect(tabbedCodeCanvasRule).toContain("visibility: hidden;");
+    expect(tabbedCodeCanvasRule).toContain("pointer-events: none;");
+    expect(tabbedCodeCanvasRule).not.toContain("display: none;");
+    expect(phoneCodeCanvasRule).not.toContain("display: none;");
+  });
+});
+
 describe("source editor interaction styles", () => {
   it("makes text selections more prominent than the active cursor line", () => {
     const activeLineRule = styles.match(/\.source-editor__codemirror \.cm-activeLine,[\s\S]*?\}/)?.[0] ?? "";

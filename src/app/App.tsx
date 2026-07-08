@@ -13,7 +13,7 @@ import {
   replaceRepository,
   saveDocument
 } from "../storage/documentRepository";
-import { computeCanvasInsets, EDITOR_DEFAULT_WIDTH } from "./layoutConstants";
+import { computeCanvasInsets, EDITOR_DEFAULT_WIDTH, shouldUseTabbedWorkbench } from "./layoutConstants";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DiagramsPanel } from "./DiagramsPanel";
 import { DslGuide } from "./DslGuide";
@@ -39,16 +39,40 @@ interface PendingShare {
   source: string;
 }
 
+type MobileTab = "code" | "diagram";
+
+function useIsTabbedWorkbench(editorWidth: number) {
+  const [isTabbedWorkbench, setIsTabbedWorkbench] = useState(() =>
+    typeof window === "undefined"
+      ? false
+      : shouldUseTabbedWorkbench({ screenWidth: window.innerWidth, editorWidth })
+  );
+
+  useEffect(() => {
+    function updateLayoutMode() {
+      setIsTabbedWorkbench(shouldUseTabbedWorkbench({ screenWidth: window.innerWidth, editorWidth }));
+    }
+
+    updateLayoutMode();
+    window.addEventListener("resize", updateLayoutMode);
+    return () => window.removeEventListener("resize", updateLayoutMode);
+  }, [editorWidth]);
+
+  return isTabbedWorkbench;
+}
+
 export function App() {
   const [repository, setRepository] = useState(() => loadRepository());
   const [editorOpen, setEditorOpen] = useState(true);
   const [editorWidth, setEditorWidth] = useState(EDITOR_DEFAULT_WIDTH);
   const [diagramsOpen, setDiagramsOpen] = useState(false);
+  const [activeMobileTab, setActiveMobileTab] = useState<MobileTab>("code");
   const [guideOpen, setGuideOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DiagramDocument | null>(null);
   const [pendingShare, setPendingShare] = useState<PendingShare | null>(null);
   const [shareError, setShareError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const isTabbedWorkbench = useIsTabbedWorkbench(editorWidth);
 
   useEffect(() => {
     function processShareLink() {
@@ -91,7 +115,14 @@ export function App() {
   }
   const visibleModel = compiled.model ?? lastValidModel.current;
   const isAtDocumentLimit = repository.documents.length >= MAX_DOCUMENTS;
-  const insets = computeCanvasInsets({ editorOpen, editorWidth, diagramsOpen });
+  const insets = computeCanvasInsets({
+    editorOpen,
+    editorWidth,
+    diagramsOpen,
+    layoutMode: isTabbedWorkbench ? "mobile" : "desktop"
+  });
+  const editorCollapsed = isTabbedWorkbench ? activeMobileTab !== "code" : !editorOpen;
+  const canvasFitKey = isTabbedWorkbench ? `mobile-${activeMobileTab}` : "desktop";
 
   function refreshRepository() {
     setRepository(loadRepository());
@@ -164,6 +195,15 @@ export function App() {
     refreshRepository();
   }
 
+  function handleEditorToggle() {
+    if (isTabbedWorkbench) {
+      setActiveMobileTab((current) => (current === "code" ? "diagram" : "code"));
+      return;
+    }
+
+    setEditorOpen((current) => !current);
+  }
+
   async function handleImport(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) {
@@ -182,8 +222,33 @@ export function App() {
   }
 
   return (
-    <main className="app-shell">
-      <DiagramCanvas model={visibleModel} insets={insets} />
+    <main
+      className="app-shell"
+      data-layout-mode={isTabbedWorkbench ? "mobile" : "desktop"}
+      data-mobile-tab={activeMobileTab}
+    >
+      <DiagramCanvas model={visibleModel} insets={insets} fitKey={canvasFitKey} />
+
+      <div className="mobile-tab-bar" role="tablist" aria-label="Mobile workbench views">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeMobileTab === "code"}
+          className="mobile-tab-bar__tab"
+          onClick={() => setActiveMobileTab("code")}
+        >
+          Code
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeMobileTab === "diagram"}
+          className="mobile-tab-bar__tab"
+          onClick={() => setActiveMobileTab("diagram")}
+        >
+          Diagram
+        </button>
+      </div>
 
       <div className="overlay overlay--top-left">
         <EditorPanel
@@ -192,8 +257,8 @@ export function App() {
           source={activeDocument.source}
           onSourceChange={updateActiveSource}
           diagnostics={compiled.diagnostics}
-          collapsed={!editorOpen}
-          onToggleCollapsed={() => setEditorOpen((current) => !current)}
+          collapsed={editorCollapsed}
+          onToggleCollapsed={handleEditorToggle}
           width={editorWidth}
           onWidthChange={setEditorWidth}
         />

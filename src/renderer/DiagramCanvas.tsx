@@ -173,15 +173,27 @@ function buildFitPadding(insets: DiagramCanvasInsets): FitPadding {
   };
 }
 
-function FitViewController({ insets, model }: { insets: DiagramCanvasInsets; model: CellDiagramModel }) {
+function FitViewController({
+  insets,
+  model,
+  fitKey
+}: {
+  insets: DiagramCanvasInsets;
+  model: CellDiagramModel;
+  fitKey?: string;
+}) {
   const { fitView } = useReactFlow();
   const { left, right } = insets;
 
   useEffect(() => {
-    fitView({ padding: buildFitPadding({ left, right }), duration: 200 });
+    const fitOptions = { padding: buildFitPadding({ left, right }), duration: 200 };
+    fitView(fitOptions);
+    const postPaintFit = window.requestAnimationFrame(() => fitView(fitOptions));
+
     // model is only used to re-trigger the fit when the diagram data itself changes
     // (switching documents), not on every re-render (e.g. focus-click highlighting).
-  }, [left, right, fitView, model]);
+    return () => window.cancelAnimationFrame(postPaintFit);
+  }, [left, right, fitView, model, fitKey]);
 
   return null;
 }
@@ -214,9 +226,10 @@ function ZoomControls({ insets }: { insets: DiagramCanvasInsets }) {
 interface DiagramCanvasProps {
   model: CellDiagramModel | null;
   insets?: DiagramCanvasInsets;
+  fitKey?: string;
 }
 
-export function DiagramCanvas({ model, insets = DEFAULT_INSETS }: DiagramCanvasProps) {
+export function DiagramCanvas({ model, insets = DEFAULT_INSETS, fitKey }: DiagramCanvasProps) {
   const [activeConnectionIds, setActiveConnectionIds] = useState<string[]>([]);
   const flow = useMemo<ReturnType<typeof toReactFlow>>(
     () => (model ? toReactFlow(model) : { nodes: [], edges: [], cellSize: { width: 0, height: 0 } }),
@@ -303,7 +316,7 @@ export function DiagramCanvas({ model, insets = DEFAULT_INSETS }: DiagramCanvasP
         onNodeClick={(_, node) => setActiveConnections(getConnectionIdsForNode(node.id))}
         onPaneClick={() => setActiveConnections([])}
       >
-        <FitViewController insets={insets} model={model} />
+        <FitViewController insets={insets} model={model} fitKey={fitKey} />
         <Background color="#cbd5e1" gap={22} />
         <ZoomControls insets={insets} />
         <div className="focus-hint" data-focus-mode={isFocusView ? "active" : "idle"}>

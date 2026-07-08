@@ -3,10 +3,40 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
+function mockMobileLayout(matches: boolean) {
+  const listeners = new Set<(event: MediaQueryListEvent) => void>();
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn((_event: string, listener: (event: MediaQueryListEvent) => void) => {
+        listeners.add(listener);
+      }),
+      removeEventListener: vi.fn((_event: string, listener: (event: MediaQueryListEvent) => void) => {
+        listeners.delete(listener);
+      }),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn()
+    }))
+  });
+}
+
+function setViewportWidth(width: number) {
+  Object.defineProperty(window, "innerWidth", {
+    configurable: true,
+    value: width
+  });
+}
+
 describe("App", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    mockMobileLayout(false);
+    setViewportWidth(1440);
   });
 
   it("renders the default sample full-bleed with the editor open", () => {
@@ -163,5 +193,56 @@ describe("App", () => {
 
     expect(screen.queryByText("React Flow canvas")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "React Flow attribution" })).not.toBeInTheDocument();
+  });
+
+  it("defaults mobile layout to the Code tab", () => {
+    setViewportWidth(1024);
+    render(<App />);
+
+    expect(screen.getByRole("tab", { name: "Code" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Diagram" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByLabelText("Cell DSL source")).toBeInTheDocument();
+  });
+
+  it("switches mobile layout between Code and Diagram tabs", async () => {
+    setViewportWidth(1024);
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await user.click(screen.getByRole("tab", { name: "Diagram" }));
+
+    expect(screen.getByRole("tab", { name: "Code" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Diagram" })).toHaveAttribute("aria-selected", "true");
+    expect(container.querySelector(".app-shell")).toHaveAttribute("data-mobile-tab", "diagram");
+
+    await user.click(screen.getByRole("tab", { name: "Code" }));
+    expect(screen.getByRole("tab", { name: "Code" })).toHaveAttribute("aria-selected", "true");
+    expect(container.querySelector(".app-shell")).toHaveAttribute("data-mobile-tab", "code");
+  });
+
+  it("maps the mobile collapse-editor control to the Diagram tab", async () => {
+    setViewportWidth(1024);
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Collapse editor" }));
+
+    expect(container.querySelector(".app-shell")).toHaveAttribute("data-mobile-tab", "diagram");
+    expect(screen.getByRole("tab", { name: "Diagram" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("keeps the original workbench when the viewport is wider than 2.5 editor widths", () => {
+    setViewportWidth(1200);
+    const { container } = render(<App />);
+
+    expect(container.querySelector(".app-shell")).toHaveAttribute("data-layout-mode", "desktop");
+  });
+
+  it("uses the tabbed workbench when the viewport is not wider than 2.5 editor widths", () => {
+    setViewportWidth(1024);
+    const { container } = render(<App />);
+
+    expect(container.querySelector(".app-shell")).toHaveAttribute("data-layout-mode", "mobile");
+    expect(screen.getByRole("tab", { name: "Code" })).toBeInTheDocument();
   });
 });

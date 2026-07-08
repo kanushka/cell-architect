@@ -659,6 +659,19 @@ button:disabled {
   border-right-color: #d6dee8;
 }
 
+.source-editor__codemirror .cm-scroller {
+  overflow-x: auto;
+}
+
+.source-editor__codemirror .cm-content {
+  width: max-content;
+  min-width: 100%;
+}
+
+.source-editor__codemirror .cm-line {
+  white-space: pre;
+}
+
 .source-editor__codemirror .cm-activeLine,
 .source-editor__codemirror .cm-activeLineGutter {
   background: rgba(37, 99, 235, 0.06);

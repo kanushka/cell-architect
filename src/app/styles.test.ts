@@ -108,4 +108,14 @@ describe("source editor interaction styles", () => {
     expect(selectionRule).toContain("#93c5fd");
     expect(selectionRule).toContain("!important");
   });
+
+  it("allows long mobile editor lines to scroll horizontally instead of clipping", () => {
+    const scrollerRule = styles.match(/\.source-editor__codemirror \.cm-scroller \{[\s\S]*?\}/)?.[0] ?? "";
+    const contentRule = styles.match(/\.source-editor__codemirror \.cm-content \{[\s\S]*?\}/)?.[0] ?? "";
+    const lineRule = styles.match(/\.source-editor__codemirror \.cm-line \{[\s\S]*?\}/)?.[0] ?? "";
+
+    expect(scrollerRule).toContain("overflow-x: auto;");
+    expect(contentRule).toContain("width: max-content;");
+    expect(lineRule).toContain("white-space: pre;");
+  });
 });

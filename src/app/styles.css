@@ -1445,3 +1445,9 @@ button:disabled {
 .export-controls { position: absolute; top: 16px; right: 16px; z-index: 5; display: flex; gap: 6px; }
 .export-controls__button { padding: 6px 10px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; cursor: pointer; }
 .export-controls__button:hover { background: #f1f5f9; }
+
+.react-flow__edge.edge-cross .react-flow__edge-path {
+  stroke: #7c3aed;
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}

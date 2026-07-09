@@ -362,6 +362,57 @@ function emitCellEdges(cell: CellModel, multi: boolean, edges: Edge[]) {
   });
 }
 
+function emitCrossEdges(project: ProjectModel, multi: boolean, edges: Edge[]) {
+  project.crossEdges.forEach((edge) => {
+    if (edge.mode !== "connected") {
+      return;
+    }
+
+    const srcComp = namespaced(edge.sourceCell, edge.sourceComp, multi);
+    const tgtComp = namespaced(edge.targetCell, edge.targetComp, multi);
+    const srcGate = gatewayNodeId(edge.sourceCell, edge.exit, multi);
+    const tgtGate = gatewayNodeId(edge.targetCell, edge.entry, multi);
+    const data = connectionData(edge.id, [srcComp, srcGate, tgtGate, tgtComp]);
+
+    edges.push(
+      {
+        id: `${edge.id}-a`,
+        data,
+        source: srcComp,
+        sourceHandle: componentHandle(edge.exit, "source"),
+        target: srcGate,
+        targetHandle: gatewayTargetHandle(edge.exit),
+        type: "step",
+        animated: true,
+        className: "edge-cross"
+      },
+      {
+        id: `${edge.id}-b`,
+        data,
+        source: srcGate,
+        sourceHandle: gatewaySourceHandle(edge.exit),
+        target: tgtGate,
+        targetHandle: gatewayTargetHandle(edge.entry),
+        label: edge.label,
+        type: "step",
+        animated: true,
+        className: "edge-cross"
+      },
+      {
+        id: `${edge.id}-c`,
+        data,
+        source: tgtGate,
+        sourceHandle: gatewaySourceHandle(edge.entry),
+        target: tgtComp,
+        targetHandle: componentHandle(edge.entry, "target"),
+        type: "step",
+        animated: true,
+        className: "edge-cross"
+      }
+    );
+  });
+}
+
 export function toReactFlow(project: ProjectModel) {
   const multi = project.cells.length > 1;
   const nodes: Node<FlowNodeData>[] = [];
@@ -378,6 +429,10 @@ export function toReactFlow(project: ProjectModel) {
       .filter((edge) => edge.kind === "exposure" || edge.kind === "inbound" || edge.kind === "outbound")
       .forEach((edge) => dirs.add(edge.direction as BoundaryDirection));
     gatewayDirectionsByCell.set(cell.id, dirs);
+  });
+  project.crossEdges.forEach((edge) => {
+    gatewayDirectionsByCell.get(edge.sourceCell)?.add(edge.exit);
+    gatewayDirectionsByCell.get(edge.targetCell)?.add(edge.entry);
   });
 
   const cellGraph = new dagre.graphlib.Graph();
@@ -472,6 +527,8 @@ export function toReactFlow(project: ProjectModel) {
 
     emitCellEdges(cell, multi, edges);
   });
+
+  emitCrossEdges(project, multi, edges);
 
   project.sharedExternals.forEach((ext) => {
     const g = cellGraph.node(`external-${ext.id}`) ?? { x: 0, y: 0 };

@@ -382,4 +382,87 @@ describe("toReactFlow", () => {
     const sharedNodes = flow.nodes.filter((n) => n.id === "external-s3");
     expect(sharedNodes).toHaveLength(1);
   });
+
+  it("emits a connected cross edge as component -> gateway -> gateway -> component using step edges", () => {
+    const project: ProjectModel = {
+      cells: [
+        { id: "orders", components: [{ id: "api" }], externals: [], edges: [] },
+        { id: "products", components: [{ id: "api" }], externals: [], edges: [] }
+      ],
+      crossEdges: [
+        {
+          id: "x1",
+          sourceCell: "orders",
+          sourceComp: "api",
+          targetCell: "products",
+          targetComp: "api",
+          exit: "east",
+          entry: "west",
+          mode: "connected",
+          line: 1
+        }
+      ],
+      sharedExternals: []
+    };
+    const flow = toReactFlow(project);
+    const crossEdges = flow.edges.filter((e) => e.id.startsWith("x1"));
+    expect(crossEdges).toHaveLength(3);
+    expect(crossEdges.every((e) => e.type === "step")).toBe(true);
+    expect(crossEdges.some((e) => e.source === "gateway-orders-east" && e.target === "gateway-products-west")).toBe(
+      true
+    );
+    expect(crossEdges.some((e) => e.source === "orders::api" && e.target === "gateway-orders-east")).toBe(true);
+    expect(crossEdges.some((e) => e.source === "gateway-products-west" && e.target === "products::api")).toBe(true);
+  });
+
+  it("does not render an edge for a decoupled cross edge yet", () => {
+    const project: ProjectModel = {
+      cells: [
+        { id: "orders", components: [{ id: "api" }], externals: [], edges: [] },
+        { id: "products", components: [{ id: "api" }], externals: [], edges: [] }
+      ],
+      crossEdges: [
+        {
+          id: "d1",
+          sourceCell: "orders",
+          sourceComp: "api",
+          targetCell: "products",
+          targetComp: "api",
+          exit: "south",
+          entry: "north",
+          mode: "decoupled",
+          line: 1
+        }
+      ],
+      sharedExternals: []
+    };
+    const flow = toReactFlow(project);
+    expect(flow.edges.some((e) => e.id.startsWith("d1"))).toBe(false);
+  });
+
+  it("emits gateways for cross-edge exit/entry directions even without other boundary usage", () => {
+    const project: ProjectModel = {
+      cells: [
+        { id: "orders", components: [{ id: "api" }], externals: [], edges: [] },
+        { id: "products", components: [{ id: "api" }], externals: [], edges: [] }
+      ],
+      crossEdges: [
+        {
+          id: "x1",
+          sourceCell: "orders",
+          sourceComp: "api",
+          targetCell: "products",
+          targetComp: "api",
+          exit: "east",
+          entry: "west",
+          mode: "connected",
+          line: 1
+        }
+      ],
+      sharedExternals: []
+    };
+    const flow = toReactFlow(project);
+    expect(flow.nodes.some((n) => n.id === "gateway-orders-east")).toBe(true);
+    expect(flow.nodes.some((n) => n.id === "gateway-products-west")).toBe(true);
+  });
 });

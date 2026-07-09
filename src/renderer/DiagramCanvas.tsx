@@ -11,7 +11,8 @@ import {
   type EdgeProps,
   type Node,
   type NodeProps,
-  getBezierPath
+  getBezierPath,
+  getSmoothStepPath
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -132,6 +133,28 @@ function LabeledEdge(props: EdgeProps) {
   );
 }
 
+function StepEdge(props: EdgeProps) {
+  const [edgePath, labelX, labelY] = getSmoothStepPath({ ...props, borderRadius: 0 });
+
+  return (
+    <>
+      <path className="react-flow__edge-path" d={edgePath} markerEnd={props.markerEnd} />
+      {props.label ? (
+        <EdgeLabelRenderer>
+          <div
+            className="edge-label"
+            style={{
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`
+            }}
+          >
+            {props.label}
+          </div>
+        </EdgeLabelRenderer>
+      ) : null}
+    </>
+  );
+}
+
 const nodeTypes = {
   cellBoundary: memo(CellBoundaryNode),
   component: memo(ComponentNode),
@@ -140,7 +163,8 @@ const nodeTypes = {
 };
 
 const edgeTypes = {
-  smoothstep: memo(LabeledEdge)
+  smoothstep: memo(LabeledEdge),
+  step: memo(StepEdge)
 };
 
 function sameConnectionIds(left: string[], right: string[]) {

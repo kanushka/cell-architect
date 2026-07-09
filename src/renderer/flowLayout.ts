@@ -233,6 +233,135 @@ function externalNodeId(cellId: string, externalId: string, multi: boolean) {
   return multi ? `external-${cellId}-${externalId}` : `external-${externalId}`;
 }
 
+function emitCellEdges(cell: CellModel, multi: boolean, edges: Edge[]) {
+  const resolve = (compId: string) => namespaced(cell.id, compId, multi);
+  const gwId = (direction: string) => gatewayNodeId(cell.id, direction, multi);
+  const extId = (externalId: string) => externalNodeId(cell.id, externalId, multi);
+
+  cell.edges.forEach((edge) => {
+    if (edge.kind === "internal") {
+      const handles = internalEdgeHandles();
+      const data = connectionData(edge.id, [resolve(edge.source), resolve(edge.target)]);
+      edges.push({
+        id: edge.id,
+        data,
+        source: resolve(edge.source),
+        sourceHandle: handles.sourceHandle,
+        target: resolve(edge.target),
+        targetHandle: handles.targetHandle,
+        label: edge.label,
+        type: "smoothstep",
+        animated: false,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 14,
+          height: 14
+        },
+        className: `edge-${edge.direction}`
+      });
+      return;
+    }
+
+    if (edge.kind === "inbound") {
+      const gatewayId = gwId(edge.direction);
+      const externalId = extId(edge.source);
+      const data = connectionData(edge.id, [externalId, gatewayId, resolve(edge.target)]);
+      edges.push(
+        {
+          id: `${edge.id}-external-gateway`,
+          data,
+          source: externalId,
+          sourceHandle: externalSourceHandle(edge.direction),
+          target: gatewayId,
+          targetHandle: gatewayTargetHandle(edge.direction),
+          label: edge.label,
+          type: "smoothstep",
+          animated: true,
+          className: `edge-${edge.direction}`
+        },
+        {
+          id: `${edge.id}-gateway-component`,
+          data,
+          source: gatewayId,
+          sourceHandle: gatewaySourceHandle(edge.direction),
+          target: resolve(edge.target),
+          targetHandle: componentHandle(edge.direction, "target"),
+          type: "smoothstep",
+          animated: true,
+          className: `edge-${edge.direction}`
+        }
+      );
+      return;
+    }
+
+    if (edge.kind === "exposure") {
+      const gatewayId = gwId(edge.direction);
+      const startsAtGateway = edge.source === edge.direction;
+
+      if (startsAtGateway) {
+        const data = connectionData(edge.id, [gatewayId, resolve(edge.target)]);
+        edges.push({
+          id: `${edge.id}-gateway-component`,
+          data,
+          source: gatewayId,
+          sourceHandle: gatewaySourceHandle(edge.direction),
+          target: resolve(edge.target),
+          targetHandle: componentHandle(edge.direction, "target"),
+          label: edge.label,
+          type: "smoothstep",
+          animated: true,
+          className: `edge-${edge.direction}`
+        });
+        return;
+      }
+
+      const data = connectionData(edge.id, [resolve(edge.source), gatewayId]);
+      edges.push({
+        id: `${edge.id}-component-gateway`,
+        data,
+        source: resolve(edge.source),
+        sourceHandle: componentHandle(edge.direction, "source"),
+        target: gatewayId,
+        targetHandle: gatewayTargetHandle(edge.direction),
+        label: edge.label,
+        type: "smoothstep",
+        animated: true,
+        className: `edge-${edge.direction}`
+      });
+      return;
+    }
+
+    const gatewayId = gwId(edge.direction);
+    const externalId = extId(edge.target);
+    const data = connectionData(edge.id, [resolve(edge.source), gatewayId, externalId]);
+    edges.push(
+      {
+        id: `${edge.id}-component-gateway`,
+        data,
+        source: resolve(edge.source),
+        sourceHandle: componentHandle(edge.direction, "source"),
+        target: gatewayId,
+        targetHandle: gatewayTargetHandle(edge.direction),
+        type: "smoothstep",
+        animated: true,
+        className: `edge-${edge.direction}`
+      },
+      {
+        id: `${edge.id}-gateway-external`,
+        data,
+        source: gatewayId,
+        sourceHandle: gatewaySourceHandle(edge.direction),
+        target: externalId,
+        targetHandle: externalTargetHandle(edge.direction),
+        label: edge.label,
+        type: "smoothstep",
+        animated: true,
+        className: `edge-${edge.direction}`
+      }
+    );
+  });
+}
+
 export function toReactFlow(project: ProjectModel) {
   const multi = project.cells.length > 1;
   const nodes: Node<FlowNodeData>[] = [];
@@ -341,132 +470,7 @@ export function toReactFlow(project: ProjectModel) {
       });
     });
 
-    cell.edges.forEach((edge) => {
-      const resolve = (compId: string) => namespaced(cell.id, compId, multi);
-      const gwId = (direction: string) => gatewayNodeId(cell.id, direction, multi);
-      const extId = (externalId: string) => externalNodeId(cell.id, externalId, multi);
-
-      if (edge.kind === "internal") {
-        const handles = internalEdgeHandles();
-        const data = connectionData(edge.id, [resolve(edge.source), resolve(edge.target)]);
-        edges.push({
-          id: edge.id,
-          data,
-          source: resolve(edge.source),
-          sourceHandle: handles.sourceHandle,
-          target: resolve(edge.target),
-          targetHandle: handles.targetHandle,
-          label: edge.label,
-          type: "smoothstep",
-          animated: false,
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 14,
-            height: 14
-          },
-          className: `edge-${edge.direction}`
-        });
-        return;
-      }
-
-      if (edge.kind === "inbound") {
-        const gatewayId = gwId(edge.direction);
-        const externalId = extId(edge.source);
-        const data = connectionData(edge.id, [externalId, gatewayId, resolve(edge.target)]);
-        edges.push(
-          {
-            id: `${edge.id}-external-gateway`,
-            data,
-            source: externalId,
-            sourceHandle: externalSourceHandle(edge.direction),
-            target: gatewayId,
-            targetHandle: gatewayTargetHandle(edge.direction),
-            label: edge.label,
-            type: "smoothstep",
-            animated: true,
-            className: `edge-${edge.direction}`
-          },
-          {
-            id: `${edge.id}-gateway-component`,
-            data,
-            source: gatewayId,
-            sourceHandle: gatewaySourceHandle(edge.direction),
-            target: resolve(edge.target),
-            targetHandle: componentHandle(edge.direction, "target"),
-            type: "smoothstep",
-            animated: true,
-            className: `edge-${edge.direction}`
-          }
-        );
-        return;
-      }
-
-      if (edge.kind === "exposure") {
-        const gatewayId = gwId(edge.direction);
-        const startsAtGateway = edge.source === edge.direction;
-
-        if (startsAtGateway) {
-          const data = connectionData(edge.id, [gatewayId, resolve(edge.target)]);
-          edges.push({
-            id: `${edge.id}-gateway-component`,
-            data,
-            source: gatewayId,
-            sourceHandle: gatewaySourceHandle(edge.direction),
-            target: resolve(edge.target),
-            targetHandle: componentHandle(edge.direction, "target"),
-            label: edge.label,
-            type: "smoothstep",
-            animated: true,
-            className: `edge-${edge.direction}`
-          });
-          return;
-        }
-
-        const data = connectionData(edge.id, [resolve(edge.source), gatewayId]);
-        edges.push({
-          id: `${edge.id}-component-gateway`,
-          data,
-          source: resolve(edge.source),
-          sourceHandle: componentHandle(edge.direction, "source"),
-          target: gatewayId,
-          targetHandle: gatewayTargetHandle(edge.direction),
-          label: edge.label,
-          type: "smoothstep",
-          animated: true,
-          className: `edge-${edge.direction}`
-        });
-        return;
-      }
-
-      const gatewayId = gwId(edge.direction);
-      const externalId = extId(edge.target);
-      const data = connectionData(edge.id, [resolve(edge.source), gatewayId, externalId]);
-      edges.push(
-        {
-          id: `${edge.id}-component-gateway`,
-          data,
-          source: resolve(edge.source),
-          sourceHandle: componentHandle(edge.direction, "source"),
-          target: gatewayId,
-          targetHandle: gatewayTargetHandle(edge.direction),
-          type: "smoothstep",
-          animated: true,
-          className: `edge-${edge.direction}`
-        },
-        {
-          id: `${edge.id}-gateway-external`,
-          data,
-          source: gatewayId,
-          sourceHandle: gatewaySourceHandle(edge.direction),
-          target: externalId,
-          targetHandle: externalTargetHandle(edge.direction),
-          label: edge.label,
-          type: "smoothstep",
-          animated: true,
-          className: `edge-${edge.direction}`
-        }
-      );
-    });
+    emitCellEdges(cell, multi, edges);
   });
 
   project.sharedExternals.forEach((ext) => {
@@ -485,10 +489,14 @@ export function toReactFlow(project: ProjectModel) {
     });
   });
 
-  const xs = nodes.map((n) => n.position.x);
-  const ys = nodes.map((n) => n.position.y);
-  const width = (xs.length ? Math.max(...xs) : 0) + 400;
-  const height = (ys.length ? Math.max(...ys) : 0) + 400;
+  const xs = nodes.flatMap((n) => [n.position.x, n.position.x + (n.width ?? 0)]);
+  const ys = nodes.flatMap((n) => [n.position.y, n.position.y + (n.height ?? 0)]);
+  const minX = xs.length ? Math.min(...xs) : 0;
+  const minY = ys.length ? Math.min(...ys) : 0;
+  const maxX = xs.length ? Math.max(...xs) : 0;
+  const maxY = ys.length ? Math.max(...ys) : 0;
+  const width = maxX - minX + 400;
+  const height = maxY - minY + 400;
 
   return { nodes, edges, cellSize: { width, height } };
 }

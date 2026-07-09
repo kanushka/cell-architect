@@ -51,6 +51,7 @@ export function compileProject(source: string): ProjectCompileResult {
   });
 
   // Group externals by id across all cells; used by >=2 cells => shared.
+  // First cell to declare a shared external's id wins for direction/line; label/type are backfilled from any use site that provides them.
   const usage = new Map<string, { cells: Set<string>; node: ExternalNode }>();
   cells.forEach((cell) => {
     cell.externals.forEach((ext) => {

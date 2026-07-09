@@ -30,14 +30,22 @@ describe("compileProject", () => {
     expect(result.model?.cells[0].externals.map((e) => e.id)).toEqual(["s3"]);
   });
 
-  it("resolves a connected cross edge and reports unknown target cell", () => {
+  it("resolves a connected cross edge", () => {
     const ok = compileProject("cell a {\n  x -> b.y\n}\ncell b {\n  component y\n}");
     expect(ok.diagnostics).toEqual([]);
     expect(ok.model?.crossEdges[0]).toMatchObject({ sourceCell: "a", targetCell: "b", mode: "connected" });
+  });
 
+  it("reports an unknown target cell", () => {
     const bad = compileProject("cell a {\n  x -> zzz.y\n}");
     expect(bad.model).toBeNull();
     expect(bad.diagnostics.some((d) => /unknown cell/i.test(d.message))).toBe(true);
+  });
+
+  it("reports an unknown source cell for a top-level cross edge", () => {
+    const result = compileProject("cell b {\n  component y\n}\nzzz.x -> b.y");
+    expect(result.model).toBeNull();
+    expect(result.diagnostics.some((d) => /unknown cell/i.test(d.message))).toBe(true);
   });
 
   it("keeps cell version and label", () => {

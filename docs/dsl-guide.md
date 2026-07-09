@@ -195,11 +195,19 @@ A document with **no** `cell { ... }` blocks is treated as a single implicit cel
 Connect a component in one cell to a component in another using a dot to qualify the target. Inside a `cell` block, the source may be a bare local component id; at the project level (outside any block), both ends must be qualified as `<cell>.<component>`.
 
 ```cell
-# inline, inside a block, bare local source
-api -> products.api                 # connected, default exit=east entry=west
-api -> east-north products.api      # connected, exit east / enter north
-api -> south-north products.api     # decoupled — exit south, enter north
-api -> south-west products.api      # decoupled — exit south, enter west
+cell orders {
+  component api
+
+  # inline, inside a block, bare local source
+  api -> products.api                 # connected, default exit=east entry=west
+  api -> east-north products.api      # connected, exit east / enter north
+  api -> south-north products.api     # decoupled — exit south, enter north
+  api -> south-west products.api      # decoupled — exit south, enter west
+}
+
+cell products {
+  component api
+}
 
 # project-level, outside any block, both ends qualified
 orders.api -> products.api : get stock

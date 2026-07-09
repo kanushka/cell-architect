@@ -73,10 +73,22 @@ const notationSections: NotationSection[] = [
     detail:
       "Connect components across cells with a dot-qualified target. The exit direction picks connected (one joined line, exit east) or decoupled (independent boundary markers, exit south) mode.",
     examples: [
-      { label: "Connected (default east/west)", code: "api -> products.api" },
-      { label: "Connected, custom entry", code: "api -> east-north products.api" },
-      { label: "Decoupled (no joining line)", code: "api -> south-north products.api : callback" },
-      { label: "Project-level, both ends qualified", code: "orders.api -> products.api : get stock" }
+      {
+        label: "Connected (default east/west)",
+        code: "cell orders {\n  component api\n  api -> products.api\n}\n\ncell products {\n  component api\n}"
+      },
+      {
+        label: "Connected, custom entry",
+        code: "cell orders {\n  component api\n  api -> east-north products.api\n}\n\ncell products {\n  component api\n}"
+      },
+      {
+        label: "Decoupled (no joining line)",
+        code: "cell orders {\n  component api\n  api -> south-north products.api : callback\n}\n\ncell products {\n  component api\n}"
+      },
+      {
+        label: "Project-level, both ends qualified",
+        code: "cell orders {\n  component api\n}\ncell products {\n  component api\n}\n\norders.api -> products.api : get stock"
+      }
     ]
   },
   {

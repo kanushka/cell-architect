@@ -5,7 +5,19 @@ export interface ExportBounds { x: number; y: number; width: number; height: num
 export interface ExportTarget { width: number; height: number; padding: number; }
 export interface ExportTransform { x: number; y: number; zoom: number; }
 
+function isPositiveFinite(value: number): boolean {
+  return Number.isFinite(value) && value > 0;
+}
+
+export function sanitizeFilename(name: string): string {
+  const cleaned = name.replace(/[\\/:*?"<>|]+/g, "-").trim();
+  return cleaned || "cell-diagram";
+}
+
 export function computeExportTransform(bounds: ExportBounds, target: ExportTarget): ExportTransform {
+  if (!isPositiveFinite(bounds.width) || !isPositiveFinite(bounds.height)) {
+    return { x: 0, y: 0, zoom: 1 };
+  }
   const usableWidth = target.width * (1 - target.padding);
   const usableHeight = target.height * (1 - target.padding);
   const zoom = Math.min(usableWidth / bounds.width, usableHeight / bounds.height, 1);
@@ -44,11 +56,11 @@ function captureOptions(nodes: Node[]) {
 export async function exportPng({ nodes, viewport, filename }: CaptureArgs) {
   const options = captureOptions(nodes);
   const dataUrl = await toPng(viewport, { ...options, pixelRatio: 2, backgroundColor: "#ffffff" });
-  triggerDownload(dataUrl, `${filename}.png`);
+  triggerDownload(dataUrl, `${sanitizeFilename(filename)}.png`);
 }
 
 export async function exportSvg({ nodes, viewport, filename }: CaptureArgs) {
   const options = captureOptions(nodes);
   const dataUrl = await toSvg(viewport, { ...options, backgroundColor: "#ffffff" });
-  triggerDownload(dataUrl, `${filename}.svg`);
+  triggerDownload(dataUrl, `${sanitizeFilename(filename)}.svg`);
 }

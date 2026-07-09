@@ -232,9 +232,12 @@ function ExportControls({ filename }: { filename: string }) {
   async function handleExport(kind: "png" | "svg") {
     const viewport = viewportElement();
     if (!viewport) { return; }
-    const nodes = getNodes();
-    const args = { nodes, viewport, filename };
-    if (kind === "png") { await exportPng(args); } else { await exportSvg(args); }
+    try {
+      const args = { nodes: getNodes(), viewport, filename };
+      if (kind === "png") { await exportPng(args); } else { await exportSvg(args); }
+    } catch (error) {
+      console.error(`Diagram ${kind.toUpperCase()} export failed`, error);
+    }
   }
   return (
     <div className="export-controls">

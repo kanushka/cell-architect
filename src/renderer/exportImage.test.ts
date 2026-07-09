@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeExportTransform } from "./exportImage";
+import { computeExportTransform, sanitizeFilename } from "./exportImage";
 
 describe("computeExportTransform", () => {
   it("scales a wide diagram to fit width and centers it with padding", () => {
@@ -20,5 +20,21 @@ describe("computeExportTransform", () => {
     expect(t.zoom).toBeCloseTo(1, 5);
     expect(t.x).toBeCloseTo(-200, 5);
     expect(t.y).toBeCloseTo(-100, 5);
+  });
+  it("returns a neutral transform for empty/degenerate bounds (no NaN)", () => {
+    const t = computeExportTransform({ x: 0, y: 0, width: 0, height: 0 }, { width: 400, height: 400, padding: 0 });
+    expect(t).toEqual({ x: 0, y: 0, zoom: 1 });
+    expect(Number.isNaN(t.x)).toBe(false);
+    expect(Number.isNaN(t.y)).toBe(false);
+    expect(Number.isNaN(t.zoom)).toBe(false);
+  });
+});
+
+describe("sanitizeFilename", () => {
+  it("replaces path and reserved characters with a dash", () => {
+    expect(sanitizeFilename("a/b:c")).toBe("a-b-c");
+  });
+  it("falls back to cell-diagram for empty input", () => {
+    expect(sanitizeFilename("")).toBe("cell-diagram");
   });
 });

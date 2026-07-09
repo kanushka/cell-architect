@@ -175,4 +175,11 @@ describe("DiagramCanvas zoom controls", () => {
 
     expect(container.querySelector(".react-flow__controls")).not.toBeInTheDocument();
   });
+
+  it("renders SVG and PNG export controls", () => {
+    const model = buildModel("component API service\nnorth -> API");
+    render(<DiagramCanvas model={model} />);
+    expect(screen.getByRole("button", { name: /export png/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /export svg/i })).toBeInTheDocument();
+  });
 });

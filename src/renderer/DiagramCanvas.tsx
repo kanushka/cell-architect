@@ -17,6 +17,7 @@ import "@xyflow/react/dist/style.css";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { CellDiagramModel } from "../domain/cellModel";
 import { FitScreenIcon, ZoomInIcon, ZoomOutIcon } from "../ui/ControlIcons";
+import { exportPng, exportSvg } from "./exportImage";
 import { toReactFlow } from "./flowLayout";
 import { connectionIdsForNode, edgeConnectionId, highlightedNodeIdsForConnections } from "./highlightModel";
 
@@ -223,6 +224,26 @@ function ZoomControls({ insets }: { insets: DiagramCanvasInsets }) {
   );
 }
 
+function ExportControls({ filename }: { filename: string }) {
+  const { getNodes } = useReactFlow();
+  function viewportElement(): HTMLElement | null {
+    return document.querySelector(".react-flow__viewport");
+  }
+  async function handleExport(kind: "png" | "svg") {
+    const viewport = viewportElement();
+    if (!viewport) { return; }
+    const nodes = getNodes();
+    const args = { nodes, viewport, filename };
+    if (kind === "png") { await exportPng(args); } else { await exportSvg(args); }
+  }
+  return (
+    <div className="export-controls">
+      <button type="button" className="export-controls__button" aria-label="Export PNG" onClick={() => handleExport("png")}>PNG</button>
+      <button type="button" className="export-controls__button" aria-label="Export SVG" onClick={() => handleExport("svg")}>SVG</button>
+    </div>
+  );
+}
+
 interface DiagramCanvasProps {
   model: CellDiagramModel | null;
   insets?: DiagramCanvasInsets;
@@ -319,6 +340,7 @@ export function DiagramCanvas({ model, insets = DEFAULT_INSETS, fitKey }: Diagra
         <FitViewController insets={insets} model={model} fitKey={fitKey} />
         <Background color="#cbd5e1" gap={22} />
         <ZoomControls insets={insets} />
+        <ExportControls filename={model.title?.trim() || "cell-diagram"} />
         <div className="focus-hint" data-focus-mode={isFocusView ? "active" : "idle"}>
           {isFocusView
             ? "Focus view: click outside or press Esc to return to the full diagram."

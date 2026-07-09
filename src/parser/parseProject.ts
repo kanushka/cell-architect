@@ -1,7 +1,7 @@
 import { CrossEntry, CrossExit, Diagnostic, ParsedCellDocument } from "../domain/cellModel";
 import { parseCellDsl } from "./parseCellDsl";
 import { CellBlock, SourceLine, splitCells } from "./splitCells";
-import { parseCrossEdge } from "./crossEdge";
+import { ParsedCrossEdge, parseCrossEdge } from "./crossEdge";
 
 export interface ParsedCell {
   id: string;
@@ -41,6 +41,21 @@ function cellBodySource(lines: SourceLine[]): string {
   return lines.map((entry) => entry.text).join("\n");
 }
 
+function buildResolvedEdge(cross: ParsedCrossEdge, sourceCell: string): ParsedCrossEdgeResolved {
+  return {
+    id: crossEdgeId(sourceCell, cross.sourceComp, cross.targetCell, cross.targetComp, cross.line),
+    sourceCell,
+    sourceComp: cross.sourceComp,
+    targetCell: cross.targetCell,
+    targetComp: cross.targetComp,
+    exit: cross.exit,
+    entry: cross.entry,
+    mode: cross.exit === "east" ? "connected" : "decoupled",
+    label: cross.label,
+    line: cross.line
+  };
+}
+
 function directionErrorMessage(error: "bare-south" | "bad-token"): string {
   return error === "bare-south"
     ? "A south cross-cell link needs an explicit entry, e.g. `south-north`. Use `east` for a connected link."
@@ -65,18 +80,7 @@ export function parseProject(source: string): ParseProjectResult {
         return;
       }
       const sourceCell = cross.sourceCell ?? block.id;
-      crossEdges.push({
-        id: crossEdgeId(sourceCell, cross.sourceComp, cross.targetCell, cross.targetComp, cross.line),
-        sourceCell,
-        sourceComp: cross.sourceComp,
-        targetCell: cross.targetCell,
-        targetComp: cross.targetComp,
-        exit: cross.exit,
-        entry: cross.entry,
-        mode: cross.exit === "east" ? "connected" : "decoupled",
-        label: cross.label,
-        line: cross.line
-      });
+      crossEdges.push(buildResolvedEdge(cross, sourceCell));
     });
 
     const parsed = parseCellDsl(cellBodySource(keptLines));
@@ -100,19 +104,16 @@ export function parseProject(source: string): ParseProjectResult {
       return;
     }
     if (cross) {
-      const sourceCell = cross.sourceCell ?? "";
-      crossEdges.push({
-        id: crossEdgeId(sourceCell, cross.sourceComp, cross.targetCell, cross.targetComp, cross.line),
-        sourceCell,
-        sourceComp: cross.sourceComp,
-        targetCell: cross.targetCell,
-        targetComp: cross.targetComp,
-        exit: cross.exit,
-        entry: cross.entry,
-        mode: cross.exit === "east" ? "connected" : "decoupled",
-        label: cross.label,
-        line: cross.line
-      });
+      if (!cross.sourceCell) {
+        diagnostics.push({
+          severity: "error",
+          message: "A cross-cell edge outside a cell block must use a qualified source, e.g. `a.x -> b.y`.",
+          line: cross.line,
+          column: 1
+        });
+        return;
+      }
+      crossEdges.push(buildResolvedEdge(cross, cross.sourceCell));
       return;
     }
     diagnostics.push({

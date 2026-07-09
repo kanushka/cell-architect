@@ -66,4 +66,36 @@ describe("parseProject", () => {
     const result = parseProject(source);
     expect(result.diagnostics.some((d) => /outside a cell/i.test(d.message))).toBe(true);
   });
+
+  it("rejects an unqualified source on a top-level cross edge", () => {
+    const source = "cell a {\n  component x\n}\nx -> b.y";
+    const result = parseProject(source);
+    expect(result.diagnostics.some((d) => /qualified source/i.test(d.message))).toBe(true);
+    expect(result.project.crossEdges).toEqual([]);
+  });
+
+  it("flags a top-level bare-south cross edge", () => {
+    const source = "cell a {\n  component x\n}\ncell b {\n  component y\n}\na.x -> south b.y";
+    const result = parseProject(source);
+    expect(result.diagnostics.some((d) => /south/i.test(d.message))).toBe(true);
+    expect(result.project.crossEdges).toEqual([]);
+  });
+
+  it("flags a bad-token in-block cross edge", () => {
+    const source = "cell a {\n  x -> west b.y\n}\ncell b {\n  component y\n}";
+    const result = parseProject(source);
+    expect(result.diagnostics.some((d) => /exit must be east or south/i.test(d.message))).toBe(true);
+  });
+
+  it("ignores a top-level comment line", () => {
+    const source = "# a comment\ncell a {\n  component x\n}";
+    const result = parseProject(source);
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  it("treats an empty title as undefined", () => {
+    const source = "title \ncell a {\n  component x\n}";
+    const result = parseProject(source);
+    expect(result.project.title).toBeUndefined();
+  });
 });

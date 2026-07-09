@@ -98,4 +98,26 @@ describe("parseProject", () => {
     const result = parseProject(source);
     expect(result.project.title).toBeUndefined();
   });
+
+  it("preserves original line numbers across blank lines for an implicit single cell", () => {
+    const source = "component API service\n\nnorth -> API\n\ncomponent Extra\n\nAPI -> Extra";
+    const result = parseProject(source);
+    expect(result.diagnostics).toEqual([]);
+    expect(result.project.cells[0].document.edges.map((e) => e.line)).toEqual([3, 7]);
+  });
+
+  it("preserves original line numbers across blank lines inside a cell block", () => {
+    const source = [
+      "title Commerce",       // line 1
+      "",                     // line 2
+      "cell orders {",        // line 3
+      "  component api",      // line 4
+      "",                     // line 5
+      "  api -> odb",         // line 6
+      "}"                     // line 7
+    ].join("\n");
+    const result = parseProject(source);
+    expect(result.diagnostics).toEqual([]);
+    expect(result.project.cells[0].document.edges.map((e) => e.line)).toEqual([6]);
+  });
 });

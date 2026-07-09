@@ -38,7 +38,20 @@ function crossEdgeId(sourceCell: string, sourceComp: string, targetCell: string,
 }
 
 function cellBodySource(lines: SourceLine[]): string {
-  return lines.map((entry) => entry.text).join("\n");
+  if (lines.length === 0) {
+    return "";
+  }
+  const parts: string[] = [];
+  let cursor = 1;
+  lines.forEach((entry) => {
+    while (cursor < entry.line) {
+      parts.push("");
+      cursor++;
+    }
+    parts.push(entry.text);
+    cursor = entry.line + 1;
+  });
+  return parts.join("\n");
 }
 
 function buildResolvedEdge(cross: ParsedCrossEdge, sourceCell: string): ParsedCrossEdgeResolved {

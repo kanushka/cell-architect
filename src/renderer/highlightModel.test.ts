@@ -16,15 +16,15 @@ describe("highlightModel", () => {
 
     expect(connectionIds).toEqual(
       expect.arrayContaining([
-        "north-pp-orders-13",
-        "west-ap-orders-14",
-        "internal-WebApp-orders-15",
-        "internal-orders-odb-16",
-        "internal-orders-ep-17",
-        "east-orders-inventories-18",
-        "east-orders-customers-19",
-        "south-orders-Stripe-20",
-        "south-orders-SendGrid-21"
+        "north-pp-orders-15",
+        "west-ap-orders-16",
+        "internal-WebApp-orders-18",
+        "internal-orders-odb-19",
+        "internal-orders-ep-20",
+        "east-orders-inventories-22",
+        "east-orders-customers-23",
+        "south-orders-Stripe-24",
+        "south-orders-SendGrid-25"
       ])
     );
     expect(Array.from(highlightedNodeIds)).toEqual(

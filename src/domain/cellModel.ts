@@ -61,3 +61,41 @@ export interface CompileResult {
   model: CellDiagramModel | null;
   diagnostics: Diagnostic[];
 }
+
+export type CrossExit = "east" | "south";
+export type CrossEntry = "west" | "north";
+export type CrossMode = "connected" | "decoupled";
+
+export interface CrossEdge {
+  id: string;
+  sourceCell: string;
+  sourceComp: string;
+  targetCell: string;
+  targetComp: string;
+  exit: CrossExit;
+  entry: CrossEntry;
+  mode: CrossMode;
+  label?: string;
+  line: number;
+}
+
+export interface CellModel {
+  id: string;
+  label?: string;
+  version?: string;
+  components: ParsedComponent[];
+  externals: ExternalNode[];
+  edges: ParsedEdge[];
+}
+
+export interface ProjectModel {
+  title?: string;
+  cells: CellModel[];
+  crossEdges: CrossEdge[];
+  sharedExternals: ExternalNode[];
+}
+
+export interface ProjectCompileResult {
+  model: ProjectModel | null;
+  diagnostics: Diagnostic[];
+}

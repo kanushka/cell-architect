@@ -51,4 +51,14 @@ describe("cellDslStreamParser", () => {
 
     expect(tokens[0]).toMatchObject({ text: "# this is a comment", style: "comment" });
   });
+
+  it("colorizes the cell keyword", () => {
+    const tokens = tokenizeLine("cell orders {");
+    expect(tokens[0]).toMatchObject({ text: "cell", style: "keyword" });
+  });
+
+  it("colorizes braces as punctuation", () => {
+    const tokens = tokenizeLine("cell orders {");
+    expect(tokens.find((token) => token.text === "{")?.style).toBe("punctuation");
+  });
 });

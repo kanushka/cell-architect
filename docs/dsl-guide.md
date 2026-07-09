@@ -158,6 +158,82 @@ east -> API
 south -> API
 ```
 
+## Multi-Cell Projects
+
+Group a cell's contents inside `cell <id> [as "<label>"] { ... }`. Everything valid in a single-cell document is valid inside a block: metadata, components, boundary declarations, dependencies, gateway exposures, aliases, and comments.
+
+```cell
+cell orders as "Order Cell" {
+  version v2
+  component api
+  component odb database
+  north customerApp
+
+  customerApp -> api
+  api -> odb
+}
+
+cell products {
+  component api
+}
+```
+
+The format is:
+
+```cell
+cell <id> [as "<label>"] {
+  ...
+}
+```
+
+A document with **no** `cell { ... }` blocks is treated as a single implicit cell, and renders exactly as it always has — this keeps every existing single-cell diagram fully backward compatible.
+
+`title`, when written at the top level outside any `cell` block, sets the overall project title rather than a single cell's title.
+
+## Cross-Cell Links
+
+Connect a component in one cell to a component in another using a dot to qualify the target. Inside a `cell` block, the source may be a bare local component id; at the project level (outside any block), both ends must be qualified as `<cell>.<component>`.
+
+```cell
+# inline, inside a block, bare local source
+api -> products.api                 # connected, default exit=east entry=west
+api -> east-north products.api      # connected, exit east / enter north
+api -> south-north products.api     # decoupled — exit south, enter north
+api -> south-west products.api      # decoupled — exit south, enter west
+
+# project-level, outside any block, both ends qualified
+orders.api -> products.api : get stock
+```
+
+The direction token is `<exit>` or `<exit>-<entry>`, where `exit` is `east` or `south` and `entry` is `west` or `north`. Defaults are `exit=east`, `entry=west`.
+
+| Exit direction | Mode | Rendering |
+| --- | --- | --- |
+| `east` | Connected | One joined line from the source component, out the source cell's east (or specified) gateway, across to the target cell's entry gateway, into the target component. |
+| `south` | Decoupled | No joining line. Each cell shows its own independent boundary marker instead: the source cell shows a line from the component out its south gateway to a small marker labeled with the target's qualified name; the target cell shows a line from a marker labeled with the source's qualified name in through its entry gateway to the target component. This is the escape hatch for cyclic cell dependencies or layouts where a straight line would cross under another cell. |
+
+A bare `south` with no entry direction (e.g. `api -> south products.api`) is a validation **error** — decoupled mode requires an explicit entry direction.
+
+`:` still adds a label to a cross-cell link, the same as any other dependency arrow.
+
+## Shared Externals
+
+An external system id used on a boundary by **two or more** cells automatically becomes one shared node, rendered once and placed between the cells that use it. An external id used by only one cell renders next to that cell, as before.
+
+```cell
+cell orders {
+  component api
+  api -> east s3
+}
+
+cell products {
+  component api
+  api -> south s3 as "AWS S3" storage
+}
+```
+
+Direction and alias/type are given per use-site — a shared external can sit on a different boundary side of each cell, and each cell can give it its own label or type.
+
 ## Aliases
 
 The `as` keyword sets a display label (alias) on a component or external declaration. The id before `as` is used in dependencies; the label after `as` is what renders on the diagram.
@@ -240,3 +316,31 @@ orders -> SendGrid : email
 
 north -> orders
 ```
+
+## Multi-Cell Example
+
+A small two-cell project combining a version, a label, a cross-cell link, and a shared external:
+
+```cell
+title Storefront
+
+cell orders as "Order Cell" {
+  version v2
+  component api
+  component odb database
+  north customerApp
+
+  customerApp -> api
+  api -> odb
+  api -> east s3
+}
+
+cell products {
+  component api
+  api -> south s3 as "AWS S3" storage
+}
+
+orders.api -> products.api : get stock
+```
+
+Here `orders` and `products` are each fully self-contained cells, `s3` is declared on the boundary of both and renders as a single shared node between them, and the project-level `orders.api -> products.api` line connects the two cells with a labeled, connected cross-cell link.

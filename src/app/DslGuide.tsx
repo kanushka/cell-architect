@@ -59,6 +59,35 @@ const notationSections: NotationSection[] = [
     examples: [{ code: "north -> api\napi -> east" }]
   },
   {
+    title: "Multi-cell projects",
+    detail:
+      "Group a cell's contents inside cell <id> { ... }. A document with no cell blocks is a single implicit cell, exactly as before.",
+    examples: [
+      {
+        code: 'cell orders as "Order Cell" {\n  version v2\n  component api\n  component odb database\n  north customerApp\n\n  customerApp -> api\n  api -> odb\n}\n\ncell products {\n  component api\n}'
+      }
+    ]
+  },
+  {
+    title: "Cross-cell links",
+    detail:
+      "Connect components across cells with a dot-qualified target. The exit direction picks connected (one joined line, exit east) or decoupled (independent boundary markers, exit south) mode.",
+    examples: [
+      { label: "Connected (default east/west)", code: "api -> products.api" },
+      { label: "Connected, custom entry", code: "api -> east-north products.api" },
+      { label: "Decoupled (no joining line)", code: "api -> south-north products.api : callback" },
+      { label: "Project-level, both ends qualified", code: "orders.api -> products.api : get stock" }
+    ]
+  },
+  {
+    title: "Shared externals",
+    detail:
+      "An external id used on a boundary by two or more cells becomes one shared node placed between them. Direction and alias/type are set per use-site.",
+    examples: [
+      { code: 'cell orders {\n  component api\n  api -> east s3\n}\n\ncell products {\n  component api\n  api -> south s3 as "AWS S3" storage\n}' }
+    ]
+  },
+  {
     title: "Aliases",
     detail:
       "Use \"as\" to set a display label on a component or external. A label is one word by default; wrap it in quotes for multiple words.",

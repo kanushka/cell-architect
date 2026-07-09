@@ -1,7 +1,7 @@
 import { HighlightStyle, StreamLanguage, syntaxHighlighting, type StreamParser } from "@codemirror/language";
 import { tags as t, Tag } from "@lezer/highlight";
 
-const STATEMENT_KEYWORDS = new Set(["title", "version", "component", "north", "east", "south", "west"]);
+const STATEMENT_KEYWORDS = new Set(["title", "version", "component", "north", "east", "south", "west", "cell"]);
 const ALIAS_KEYWORD = "as";
 
 const aliasKeywordTag = Tag.define();
@@ -22,6 +22,10 @@ export const cellDslStreamParser: StreamParser<Record<string, never>> = {
 
     if (stream.match(/^->/)) {
       return "operator";
+    }
+
+    if (stream.match(/^[{}]/)) {
+      return "punctuation";
     }
 
     if (stream.match(/^"[^"]*"/)) {
@@ -55,7 +59,8 @@ const cellDslHighlightStyle = HighlightStyle.define([
   { tag: aliasKeywordTag, color: "#0f766e", fontWeight: "600", fontStyle: "italic" },
   { tag: t.comment, color: "#6b7280", fontStyle: "italic" },
   { tag: t.operator, color: "#334155", fontWeight: "600" },
-  { tag: t.string, color: "#b45309" }
+  { tag: t.string, color: "#b45309" },
+  { tag: t.punctuation, color: "#475569", fontWeight: "600" }
 ]);
 
 export const cellDslLanguageExtension = [StreamLanguage.define(cellDslStreamParser), syntaxHighlighting(cellDslHighlightStyle)];

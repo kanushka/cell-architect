@@ -376,7 +376,7 @@ function emitCrossEdges(project: ProjectModel, multi: boolean, edges: Edge[]) {
 
     edges.push(
       {
-        id: `${edge.id}-a`,
+        id: `${edge.id}-component-gateway`,
         data,
         source: srcComp,
         sourceHandle: componentHandle(edge.exit, "source"),
@@ -387,7 +387,7 @@ function emitCrossEdges(project: ProjectModel, multi: boolean, edges: Edge[]) {
         className: "edge-cross"
       },
       {
-        id: `${edge.id}-b`,
+        id: `${edge.id}-gateway-gateway`,
         data,
         source: srcGate,
         sourceHandle: gatewaySourceHandle(edge.exit),
@@ -399,7 +399,7 @@ function emitCrossEdges(project: ProjectModel, multi: boolean, edges: Edge[]) {
         className: "edge-cross"
       },
       {
-        id: `${edge.id}-c`,
+        id: `${edge.id}-gateway-component`,
         data,
         source: tgtGate,
         sourceHandle: gatewaySourceHandle(edge.entry),

@@ -111,49 +111,29 @@ function GatewayNode({ data }: NodeProps) {
   );
 }
 
-function LabeledEdge(props: EdgeProps) {
-  const [edgePath, labelX, labelY] = getBezierPath(props);
-
-  return (
-    <>
-      <path className="react-flow__edge-path" d={edgePath} markerEnd={props.markerEnd} />
-      {props.label ? (
-        <EdgeLabelRenderer>
-          <div
-            className="edge-label"
-            style={{
-              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`
-            }}
-          >
-            {props.label}
-          </div>
-        </EdgeLabelRenderer>
-      ) : null}
-    </>
-  );
+function makePathEdge(computePath: (props: EdgeProps) => [string, number, number, ...unknown[]]) {
+  return function PathEdge(props: EdgeProps) {
+    const [edgePath, labelX, labelY] = computePath(props);
+    return (
+      <>
+        <path className="react-flow__edge-path" d={edgePath} markerEnd={props.markerEnd} />
+        {props.label ? (
+          <EdgeLabelRenderer>
+            <div
+              className="edge-label"
+              style={{ transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)` }}
+            >
+              {props.label}
+            </div>
+          </EdgeLabelRenderer>
+        ) : null}
+      </>
+    );
+  };
 }
 
-function StepEdge(props: EdgeProps) {
-  const [edgePath, labelX, labelY] = getSmoothStepPath({ ...props, borderRadius: 0 });
-
-  return (
-    <>
-      <path className="react-flow__edge-path" d={edgePath} markerEnd={props.markerEnd} />
-      {props.label ? (
-        <EdgeLabelRenderer>
-          <div
-            className="edge-label"
-            style={{
-              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`
-            }}
-          >
-            {props.label}
-          </div>
-        </EdgeLabelRenderer>
-      ) : null}
-    </>
-  );
-}
+const LabeledEdge = makePathEdge((props) => getBezierPath(props));
+const StepEdge = makePathEdge((props) => getSmoothStepPath({ ...props, borderRadius: 0 }));
 
 const nodeTypes = {
   cellBoundary: memo(CellBoundaryNode),

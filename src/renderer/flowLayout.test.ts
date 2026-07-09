@@ -465,4 +465,33 @@ describe("toReactFlow", () => {
     expect(flow.nodes.some((n) => n.id === "gateway-orders-east")).toBe(true);
     expect(flow.nodes.some((n) => n.id === "gateway-products-west")).toBe(true);
   });
+
+  it("handles a mixed-axis connected cross edge (east exit into north entry)", () => {
+    const project: ProjectModel = {
+      cells: [
+        { id: "orders", components: [{ id: "api" }], externals: [], edges: [] },
+        { id: "products", components: [{ id: "api" }], externals: [], edges: [] }
+      ],
+      crossEdges: [
+        {
+          id: "x2",
+          sourceCell: "orders",
+          sourceComp: "api",
+          targetCell: "products",
+          targetComp: "api",
+          exit: "east",
+          entry: "north",
+          mode: "connected",
+          line: 1
+        }
+      ],
+      sharedExternals: []
+    };
+    const flow = toReactFlow(project);
+    const middleSegment = flow.edges.find((e) => e.id === "x2-gateway-gateway");
+    expect(middleSegment?.source).toBe("gateway-orders-east");
+    expect(middleSegment?.target).toBe("gateway-products-north");
+    const lastSegment = flow.edges.find((e) => e.id === "x2-gateway-component");
+    expect(lastSegment?.targetHandle).toBe("component-top-target");
+  });
 });

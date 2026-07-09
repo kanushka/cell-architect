@@ -4,6 +4,7 @@ import {
   CompileResult,
   Diagnostic,
   ExternalNode,
+  ParsedCellDocument,
   ParsedComponent,
   ParsedEdge
 } from "../domain/cellModel";
@@ -181,42 +182,49 @@ function inferredComponents(components: ParsedComponent[], edges: ParsedEdge[]) 
   return Array.from(componentMap.values());
 }
 
-export function compileCellSource(source: string): CompileResult {
-  const parsed = parseCellDsl(source);
-  const componentLookup = createLookup(parsed.document.components);
-  const declaredExternalMap = new Map<string, ExternalNode>(
-    parsed.document.externals.map((external) => [external.id, external])
-  );
-  const externalLookup = createLookup(parsed.document.externals);
-  const normalizedEdges = parsed.document.edges.map((edge) =>
+export interface CompiledCellParts {
+  components: ParsedComponent[];
+  externals: ExternalNode[];
+  edges: ParsedEdge[];
+  diagnostics: Diagnostic[];
+}
+
+export function compileCellDocument(document: ParsedCellDocument): CompiledCellParts {
+  const componentLookup = createLookup(document.components);
+  const declaredExternalMap = new Map<string, ExternalNode>(document.externals.map((e) => [e.id, e]));
+  const externalLookup = createLookup(document.externals);
+  const normalizedEdges = document.edges.map((edge) =>
     normalizeEdge(edge, componentLookup, externalLookup, declaredExternalMap)
   );
-  const components = inferredComponents(parsed.document.components, normalizedEdges);
-  const diagnostics = [...parsed.diagnostics, ...normalizedEdges.flatMap(validateEdgeDirection)];
-
-  if (diagnostics.length > 0) {
-    return { model: null, diagnostics };
-  }
+  const components = inferredComponents(document.components, normalizedEdges);
+  const diagnostics = normalizedEdges.flatMap(validateEdgeDirection);
 
   const externalMap = new Map<string, ExternalNode>(declaredExternalMap);
-
   normalizedEdges.forEach((edge) => {
     if (edge.kind === "inbound" && edge.direction !== "internal") {
       externalMap.set(edge.source, externalMap.get(edge.source) ?? { id: edge.source, direction: edge.direction, line: edge.line });
     }
-
     if (edge.kind === "outbound" && edge.direction !== "internal") {
       externalMap.set(edge.target, externalMap.get(edge.target) ?? { id: edge.target, direction: edge.direction, line: edge.line });
     }
   });
 
+  return { components, externals: Array.from(externalMap.values()), edges: normalizedEdges, diagnostics };
+}
+
+export function compileCellSource(source: string): CompileResult {
+  const parsed = parseCellDsl(source);
+  const compiled = compileCellDocument(parsed.document);
+  const diagnostics = [...parsed.diagnostics, ...compiled.diagnostics];
+  if (diagnostics.length > 0) {
+    return { model: null, diagnostics };
+  }
   const model: CellDiagramModel = {
     title: parsed.document.title,
     version: parsed.document.version,
-    components,
-    externals: Array.from(externalMap.values()),
-    edges: normalizedEdges
+    components: compiled.components,
+    externals: compiled.externals,
+    edges: compiled.edges
   };
-
   return { model, diagnostics: [] };
 }

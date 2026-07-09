@@ -413,10 +413,120 @@ function emitCrossEdges(project: ProjectModel, multi: boolean, edges: Edge[]) {
   });
 }
 
+function emitDecoupledCrossEdges(
+  project: ProjectModel,
+  multi: boolean,
+  cellBoxes: Map<string, { originX: number; originY: number; width: number; height: number }>,
+  nodes: Node<FlowNodeData>[],
+  edges: Edge[]
+) {
+  project.crossEdges.forEach((edge) => {
+    if (edge.mode !== "decoupled") {
+      return;
+    }
+
+    const srcBox = cellBoxes.get(edge.sourceCell);
+    const tgtBox = cellBoxes.get(edge.targetCell);
+    if (!srcBox || !tgtBox) {
+      return;
+    }
+
+    const srcComp = namespaced(edge.sourceCell, edge.sourceComp, multi);
+    const tgtComp = namespaced(edge.targetCell, edge.targetComp, multi);
+    const srcGate = gatewayNodeId(edge.sourceCell, edge.exit, multi);
+    const tgtGate = gatewayNodeId(edge.targetCell, edge.entry, multi);
+    const stubOutId = `xstub-${edge.id}-out`;
+    const stubInId = `xstub-${edge.id}-in`;
+
+    const outPosition = externalPosition(edge.exit, 0, 1, srcBox.width, srcBox.height);
+    const inPosition = externalPosition(edge.entry, 0, 1, tgtBox.width, tgtBox.height);
+
+    nodes.push({
+      id: stubOutId,
+      type: "external",
+      position: { x: srcBox.originX + outPosition.x, y: srcBox.originY + outPosition.y },
+      data: {
+        nodeId: stubOutId,
+        label: `${edge.targetCell}.${edge.targetComp}`,
+        externalType: undefined,
+        direction: edge.exit
+      },
+      draggable: false
+    });
+    nodes.push({
+      id: stubInId,
+      type: "external",
+      position: { x: tgtBox.originX + inPosition.x, y: tgtBox.originY + inPosition.y },
+      data: {
+        nodeId: stubInId,
+        label: `${edge.sourceCell}.${edge.sourceComp}`,
+        externalType: undefined,
+        direction: edge.entry
+      },
+      draggable: false
+    });
+
+    const outData = connectionData(`${edge.id}-out`, [srcComp, srcGate, stubOutId]);
+    edges.push(
+      {
+        id: `${edge.id}-out-component-gateway`,
+        data: outData,
+        source: srcComp,
+        sourceHandle: componentHandle(edge.exit, "source"),
+        target: srcGate,
+        targetHandle: gatewayTargetHandle(edge.exit),
+        type: "step",
+        animated: true,
+        className: "edge-cross"
+      },
+      {
+        id: `${edge.id}-out-gateway-external`,
+        data: outData,
+        source: srcGate,
+        sourceHandle: gatewaySourceHandle(edge.exit),
+        target: stubOutId,
+        targetHandle: externalTargetHandle(edge.exit),
+        label: edge.label,
+        type: "step",
+        animated: true,
+        className: "edge-cross"
+      }
+    );
+
+    const inData = connectionData(`${edge.id}-in`, [stubInId, tgtGate, tgtComp]);
+    edges.push(
+      {
+        id: `${edge.id}-in-external-gateway`,
+        data: inData,
+        source: stubInId,
+        sourceHandle: externalSourceHandle(edge.entry),
+        target: tgtGate,
+        targetHandle: gatewayTargetHandle(edge.entry),
+        type: "step",
+        animated: true,
+        className: "edge-cross"
+      },
+      {
+        id: `${edge.id}-in-gateway-component`,
+        data: inData,
+        source: tgtGate,
+        sourceHandle: gatewaySourceHandle(edge.entry),
+        target: tgtComp,
+        targetHandle: componentHandle(edge.entry, "target"),
+        type: "step",
+        animated: true,
+        className: "edge-cross"
+      }
+    );
+  });
+}
+
 export function toReactFlow(project: ProjectModel) {
   const multi = project.cells.length > 1;
   const nodes: Node<FlowNodeData>[] = [];
   const edges: Edge[] = [];
+
+  const cellBoxes = new Map<string, { originX: number; originY: number; width: number; height: number }>();
 
   const layouts = new Map<string, ReturnType<typeof layoutCell>>();
   project.cells.forEach((cell) => layouts.set(cell.id, layoutCell(cell)));
@@ -457,6 +567,7 @@ export function toReactFlow(project: ProjectModel) {
     const g = cellGraph.node(`cell-${cell.id}`) ?? { x: layout.width / 2, y: layout.height / 2 };
     const originX = g.x - layout.width / 2;
     const originY = g.y - layout.height / 2;
+    cellBoxes.set(cell.id, { originX, originY, width: layout.width, height: layout.height });
 
     nodes.push({
       id: `cell-${cell.id}`,
@@ -529,6 +640,7 @@ export function toReactFlow(project: ProjectModel) {
   });
 
   emitCrossEdges(project, multi, edges);
+  emitDecoupledCrossEdges(project, multi, cellBoxes, nodes, edges);
 
   project.sharedExternals.forEach((ext) => {
     const g = cellGraph.node(`external-${ext.id}`) ?? { x: 0, y: 0 };

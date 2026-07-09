@@ -39,4 +39,19 @@ describe("highlightModel", () => {
       ])
     );
   });
+
+  it("groups highlighted nodes for a namespaced cross-cell connection", () => {
+    const edges = [
+      {
+        id: "x1-component-gateway",
+        data: {
+          connectionId: "x1",
+          connectedNodeIds: ["orders::api", "gateway-orders-east", "gateway-products-west", "products::api"]
+        }
+      }
+    ];
+    const highlighted = highlightedNodeIdsForConnections(edges, new Set(["x1"]));
+    expect(highlighted.has("orders::api")).toBe(true);
+    expect(highlighted.has("products::api")).toBe(true);
+  });
 });

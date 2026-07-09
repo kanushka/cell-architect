@@ -415,7 +415,7 @@ describe("toReactFlow", () => {
     expect(crossEdges.some((e) => e.source === "gateway-products-west" && e.target === "products::api")).toBe(true);
   });
 
-  it("does not render an edge for a decoupled cross edge yet", () => {
+  it("renders a decoupled cross edge as two boundary stub chains instead of one joined line", () => {
     const project: ProjectModel = {
       cells: [
         { id: "orders", components: [{ id: "api" }], externals: [], edges: [] },
@@ -437,7 +437,84 @@ describe("toReactFlow", () => {
       sharedExternals: []
     };
     const flow = toReactFlow(project);
-    expect(flow.edges.some((e) => e.id.startsWith("d1"))).toBe(false);
+    expect(flow.edges.some((e) => e.id.startsWith("d1-"))).toBe(true);
+    expect(
+      flow.edges.some((e) => e.source === "gateway-orders-south" && e.target === "gateway-products-north")
+    ).toBe(false);
+  });
+
+  it("emits two independent boundary stubs for a decoupled cross edge (no inter-cell segment)", () => {
+    const project: ProjectModel = {
+      cells: [
+        { id: "orders", components: [{ id: "api" }], externals: [], edges: [] },
+        { id: "products", components: [{ id: "api" }], externals: [], edges: [] }
+      ],
+      crossEdges: [
+        {
+          id: "d1",
+          sourceCell: "orders",
+          sourceComp: "api",
+          targetCell: "products",
+          targetComp: "api",
+          exit: "south",
+          entry: "north",
+          mode: "decoupled",
+          line: 1
+        }
+      ],
+      sharedExternals: []
+    };
+    const flow = toReactFlow(project);
+
+    expect(flow.nodes.some((n) => n.id === "xstub-d1-out")).toBe(true);
+    expect(flow.nodes.some((n) => n.id === "xstub-d1-in")).toBe(true);
+
+    const outStub = flow.nodes.find((n) => n.id === "xstub-d1-out")!;
+    const inStub = flow.nodes.find((n) => n.id === "xstub-d1-in")!;
+    expect(outStub.data.label).toBe("products.api");
+    expect(inStub.data.label).toBe("orders.api");
+
+    const stubEdges = flow.edges.filter((e) => e.id.startsWith("d1-"));
+    expect(stubEdges).toHaveLength(4);
+    expect(stubEdges.every((e) => e.type === "step")).toBe(true);
+
+    // no edge directly joins the two cells' gateways (that's the defining trait of decoupled mode)
+    expect(
+      flow.edges.some((e) => e.source === "gateway-orders-south" && e.target === "gateway-products-north")
+    ).toBe(false);
+
+    // the two chains are independently connected (distinct connectionIds)
+    const outChainIds = new Set(stubEdges.filter((e) => e.id.startsWith("d1-out")).map((e) => e.data?.connectionId));
+    const inChainIds = new Set(stubEdges.filter((e) => e.id.startsWith("d1-in")).map((e) => e.data?.connectionId));
+    expect(outChainIds.size).toBe(1);
+    expect(inChainIds.size).toBe(1);
+    expect(Array.from(outChainIds)[0]).not.toBe(Array.from(inChainIds)[0]);
+  });
+
+  it("emits a gateway for a decoupled cross edge's exit/entry directions", () => {
+    const project: ProjectModel = {
+      cells: [
+        { id: "orders", components: [{ id: "api" }], externals: [], edges: [] },
+        { id: "products", components: [{ id: "api" }], externals: [], edges: [] }
+      ],
+      crossEdges: [
+        {
+          id: "d1",
+          sourceCell: "orders",
+          sourceComp: "api",
+          targetCell: "products",
+          targetComp: "api",
+          exit: "south",
+          entry: "north",
+          mode: "decoupled",
+          line: 1
+        }
+      ],
+      sharedExternals: []
+    };
+    const flow = toReactFlow(project);
+    expect(flow.nodes.some((n) => n.id === "gateway-orders-south")).toBe(true);
+    expect(flow.nodes.some((n) => n.id === "gateway-products-north")).toBe(true);
   });
 
   it("emits gateways for cross-edge exit/entry directions even without other boundary usage", () => {

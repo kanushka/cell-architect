@@ -1,6 +1,6 @@
 import dagre from "@dagrejs/dagre";
 import { MarkerType, type Edge, type Node } from "@xyflow/react";
-import { CellDiagramModel } from "../domain/cellModel";
+import { CellModel, ProjectModel } from "../domain/cellModel";
 
 type FlowNodeData = Record<string, unknown>;
 type BoundaryDirection = "north" | "east" | "south" | "west";
@@ -25,7 +25,7 @@ const externalStepByDirection: Record<BoundaryDirection, number> = {
   west: 172
 };
 
-function componentLayout(model: CellDiagramModel) {
+export function layoutCell(cell: CellModel) {
   const graph = new dagre.graphlib.Graph();
   graph.setDefaultEdgeLabel(() => ({}));
   graph.setGraph({
@@ -36,11 +36,11 @@ function componentLayout(model: CellDiagramModel) {
     marginy: 20
   });
 
-  model.components.forEach((component) => {
+  cell.components.forEach((component) => {
     graph.setNode(component.id, { width: componentWidth, height: componentHeight });
   });
 
-  model.edges
+  cell.edges
     .filter((edge) => edge.kind === "internal")
     .forEach((edge) => {
       graph.setEdge(edge.source, edge.target);
@@ -48,7 +48,7 @@ function componentLayout(model: CellDiagramModel) {
 
   dagre.layout(graph);
 
-  const nodes = model.components.map((component) => {
+  const nodes = cell.components.map((component) => {
     const position = graph.node(component.id) ?? { x: 0, y: 0 };
     return {
       component,
@@ -221,103 +221,140 @@ function connectionData(connectionId: string, connectedNodeIds: string[]) {
   };
 }
 
-export function toReactFlow(model: CellDiagramModel) {
-  const layout = componentLayout(model);
-  const origin = { x: 360, y: 230 };
-  const nodes: Node<FlowNodeData>[] = [
-    {
-      id: "cell-boundary",
+function namespaced(cellId: string, id: string, multi: boolean) {
+  return multi ? `${cellId}::${id}` : id;
+}
+
+function gatewayNodeId(cellId: string, direction: string, multi: boolean) {
+  return multi ? `gateway-${cellId}-${direction}` : `gateway-${direction}`;
+}
+
+function externalNodeId(cellId: string, externalId: string, multi: boolean) {
+  return multi ? `external-${cellId}-${externalId}` : `external-${externalId}`;
+}
+
+export function toReactFlow(project: ProjectModel) {
+  const multi = project.cells.length > 1;
+  const nodes: Node<FlowNodeData>[] = [];
+  const edges: Edge[] = [];
+
+  const layouts = new Map<string, ReturnType<typeof layoutCell>>();
+  project.cells.forEach((cell) => layouts.set(cell.id, layoutCell(cell)));
+
+  const gatewayDirectionsByCell = new Map<string, Set<BoundaryDirection>>();
+  project.cells.forEach((cell) => {
+    const dirs = new Set<BoundaryDirection>();
+    cell.externals.forEach((external) => dirs.add(external.direction as BoundaryDirection));
+    cell.edges
+      .filter((edge) => edge.kind === "exposure" || edge.kind === "inbound" || edge.kind === "outbound")
+      .forEach((edge) => dirs.add(edge.direction as BoundaryDirection));
+    gatewayDirectionsByCell.set(cell.id, dirs);
+  });
+
+  const cellGraph = new dagre.graphlib.Graph();
+  cellGraph.setDefaultEdgeLabel(() => ({}));
+  cellGraph.setGraph({ rankdir: "LR", ranksep: 260, nodesep: 200, marginx: 60, marginy: 60 });
+
+  project.cells.forEach((cell) => {
+    const layout = layouts.get(cell.id)!;
+    cellGraph.setNode(`cell-${cell.id}`, { width: layout.width, height: layout.height });
+  });
+  project.sharedExternals.forEach((ext) => {
+    cellGraph.setNode(`external-${ext.id}`, { width: externalSize, height: externalSize });
+  });
+  project.crossEdges
+    .filter((edge) => edge.mode === "connected")
+    .forEach((edge) => cellGraph.setEdge(`cell-${edge.sourceCell}`, `cell-${edge.targetCell}`));
+
+  dagre.layout(cellGraph);
+
+  project.cells.forEach((cell) => {
+    const layout = layouts.get(cell.id)!;
+    const g = cellGraph.node(`cell-${cell.id}`) ?? { x: layout.width / 2, y: layout.height / 2 };
+    const originX = g.x - layout.width / 2;
+    const originY = g.y - layout.height / 2;
+
+    nodes.push({
+      id: `cell-${cell.id}`,
       type: "cellBoundary",
-      position: origin,
+      position: { x: originX, y: originY },
       data: {
-        title: model.title,
-        version: model.version,
+        title: cell.label ?? (multi ? cell.id : project.title),
+        version: cell.version,
         width: layout.width,
         height: layout.height
       },
       draggable: false,
       selectable: false
-    }
-  ];
-
-  layout.nodes.forEach(({ component, x, y }) => {
-    nodes.push({
-      id: component.id,
-      type: "component",
-      position: { x: origin.x + x, y: origin.y + y },
-      data: {
-        nodeId: component.id,
-        label: component.label ?? component.id,
-        componentType: component.type
-      },
-      draggable: false
     });
-  });
 
-  const byDirection = model.externals.reduce<Record<string, string[]>>((groups, external) => {
-    groups[external.direction] = [...(groups[external.direction] ?? []), external.id];
-    return groups;
-  }, {});
-  const gatewayDirections = new Set([
-    ...Object.keys(byDirection),
-    ...model.edges.filter((edge) => edge.kind === "exposure").map((edge) => edge.direction)
-  ]);
-
-  Array.from(gatewayDirections).forEach((direction) => {
-    const position = gatewayPosition(direction as BoundaryDirection, layout.width, layout.height);
-    nodes.push({
-      id: `gateway-${direction}`,
-      type: "gateway",
-      position: {
-        x: origin.x + position.x,
-        y: origin.y + position.y
-      },
-      data: {
-        nodeId: `gateway-${direction}`,
-        direction
-      },
-      draggable: false
+    layout.nodes.forEach(({ component, x, y }) => {
+      const id = namespaced(cell.id, component.id, multi);
+      nodes.push({
+        id,
+        type: "component",
+        position: { x: originX + x, y: originY + y },
+        data: { nodeId: id, label: component.label ?? component.id, componentType: component.type },
+        draggable: false
+      });
     });
-  });
 
-  model.externals.forEach((external) => {
-    const peers = byDirection[external.direction] ?? [];
-    const position = externalPosition(
-      external.direction as BoundaryDirection,
-      peers.indexOf(external.id),
-      peers.length,
-      layout.width,
-      layout.height
-    );
+    const byDirection = cell.externals.reduce<Record<string, string[]>>((groups, external) => {
+      groups[external.direction] = [...(groups[external.direction] ?? []), external.id];
+      return groups;
+    }, {});
 
-    nodes.push({
-      id: `external-${external.id}`,
-      type: "external",
-      position: {
-        x: origin.x + position.x,
-        y: origin.y + position.y
-      },
-      data: {
-        nodeId: `external-${external.id}`,
-        label: external.label ?? external.id,
-        externalType: external.type,
-        direction: external.direction
-      },
-      draggable: false
+    const gatewayDirections = gatewayDirectionsByCell.get(cell.id) ?? new Set<BoundaryDirection>();
+    Array.from(gatewayDirections).forEach((direction) => {
+      const position = gatewayPosition(direction, layout.width, layout.height);
+      const id = gatewayNodeId(cell.id, direction, multi);
+      nodes.push({
+        id,
+        type: "gateway",
+        position: { x: originX + position.x, y: originY + position.y },
+        data: { nodeId: id, direction },
+        draggable: false
+      });
     });
-  });
 
-  const edges: Edge[] = model.edges.flatMap<Edge>((edge) => {
-    if (edge.kind === "internal") {
-      const handles = internalEdgeHandles();
-      const data = connectionData(edge.id, [edge.source, edge.target]);
-      return [
-        {
+    cell.externals.forEach((external) => {
+      const peers = byDirection[external.direction] ?? [];
+      const position = externalPosition(
+        external.direction as BoundaryDirection,
+        peers.indexOf(external.id),
+        peers.length,
+        layout.width,
+        layout.height
+      );
+      const id = externalNodeId(cell.id, external.id, multi);
+      nodes.push({
+        id,
+        type: "external",
+        position: { x: originX + position.x, y: originY + position.y },
+        data: {
+          nodeId: id,
+          label: external.label ?? external.id,
+          externalType: external.type,
+          direction: external.direction
+        },
+        draggable: false
+      });
+    });
+
+    cell.edges.forEach((edge) => {
+      const resolve = (compId: string) => namespaced(cell.id, compId, multi);
+      const gwId = (direction: string) => gatewayNodeId(cell.id, direction, multi);
+      const extId = (externalId: string) => externalNodeId(cell.id, externalId, multi);
+
+      if (edge.kind === "internal") {
+        const handles = internalEdgeHandles();
+        const data = connectionData(edge.id, [resolve(edge.source), resolve(edge.target)]);
+        edges.push({
           id: edge.id,
           data,
-          source: edge.source,
+          source: resolve(edge.source),
           sourceHandle: handles.sourceHandle,
-          target: edge.target,
+          target: resolve(edge.target),
           targetHandle: handles.targetHandle,
           label: edge.label,
           type: "smoothstep",
@@ -328,69 +365,68 @@ export function toReactFlow(model: CellDiagramModel) {
             height: 14
           },
           className: `edge-${edge.direction}`
-        }
-      ];
-    }
+        });
+        return;
+      }
 
-    if (edge.kind === "inbound") {
-      const gatewayId = `gateway-${edge.direction}`;
-      const externalId = `external-${edge.source}`;
-      const data = connectionData(edge.id, [externalId, gatewayId, edge.target]);
-      return [
-        {
-          id: `${edge.id}-external-gateway`,
-          data,
-          source: externalId,
-          sourceHandle: externalSourceHandle(edge.direction),
-          target: gatewayId,
-          targetHandle: gatewayTargetHandle(edge.direction),
-          label: edge.label,
-          type: "smoothstep",
-          animated: true,
-          className: `edge-${edge.direction}`
-        },
-        {
-          id: `${edge.id}-gateway-component`,
-          data,
-          source: gatewayId,
-          sourceHandle: gatewaySourceHandle(edge.direction),
-          target: edge.target,
-          targetHandle: componentHandle(edge.direction, "target"),
-          type: "smoothstep",
-          animated: true,
-          className: `edge-${edge.direction}`
-        }
-      ];
-    }
-
-    if (edge.kind === "exposure") {
-      const gatewayId = `gateway-${edge.direction}`;
-      const startsAtGateway = edge.source === edge.direction;
-
-      if (startsAtGateway) {
-        const data = connectionData(edge.id, [gatewayId, edge.target]);
-        return [
+      if (edge.kind === "inbound") {
+        const gatewayId = gwId(edge.direction);
+        const externalId = extId(edge.source);
+        const data = connectionData(edge.id, [externalId, gatewayId, resolve(edge.target)]);
+        edges.push(
+          {
+            id: `${edge.id}-external-gateway`,
+            data,
+            source: externalId,
+            sourceHandle: externalSourceHandle(edge.direction),
+            target: gatewayId,
+            targetHandle: gatewayTargetHandle(edge.direction),
+            label: edge.label,
+            type: "smoothstep",
+            animated: true,
+            className: `edge-${edge.direction}`
+          },
           {
             id: `${edge.id}-gateway-component`,
             data,
             source: gatewayId,
             sourceHandle: gatewaySourceHandle(edge.direction),
-            target: edge.target,
+            target: resolve(edge.target),
+            targetHandle: componentHandle(edge.direction, "target"),
+            type: "smoothstep",
+            animated: true,
+            className: `edge-${edge.direction}`
+          }
+        );
+        return;
+      }
+
+      if (edge.kind === "exposure") {
+        const gatewayId = gwId(edge.direction);
+        const startsAtGateway = edge.source === edge.direction;
+
+        if (startsAtGateway) {
+          const data = connectionData(edge.id, [gatewayId, resolve(edge.target)]);
+          edges.push({
+            id: `${edge.id}-gateway-component`,
+            data,
+            source: gatewayId,
+            sourceHandle: gatewaySourceHandle(edge.direction),
+            target: resolve(edge.target),
             targetHandle: componentHandle(edge.direction, "target"),
             label: edge.label,
             type: "smoothstep",
             animated: true,
             className: `edge-${edge.direction}`
-          }
-        ];
-      }
+          });
+          return;
+        }
 
-      const data = connectionData(edge.id, [edge.source, gatewayId]);
-      return [
-        {
+        const data = connectionData(edge.id, [resolve(edge.source), gatewayId]);
+        edges.push({
           id: `${edge.id}-component-gateway`,
           data,
-          source: edge.source,
+          source: resolve(edge.source),
           sourceHandle: componentHandle(edge.direction, "source"),
           target: gatewayId,
           targetHandle: gatewayTargetHandle(edge.direction),
@@ -398,46 +434,61 @@ export function toReactFlow(model: CellDiagramModel) {
           type: "smoothstep",
           animated: true,
           className: `edge-${edge.direction}`
-        }
-      ];
-    }
-
-    const gatewayId = `gateway-${edge.direction}`;
-    const externalId = `external-${edge.target}`;
-    const data = connectionData(edge.id, [edge.source, gatewayId, externalId]);
-    return [
-      {
-        id: `${edge.id}-component-gateway`,
-        data,
-        source: edge.source,
-        sourceHandle: componentHandle(edge.direction, "source"),
-        target: gatewayId,
-        targetHandle: gatewayTargetHandle(edge.direction),
-        type: "smoothstep",
-        animated: true,
-        className: `edge-${edge.direction}`
-      },
-      {
-        id: `${edge.id}-gateway-external`,
-        data,
-        source: gatewayId,
-        sourceHandle: gatewaySourceHandle(edge.direction),
-        target: externalId,
-        targetHandle: externalTargetHandle(edge.direction),
-        label: edge.label,
-        type: "smoothstep",
-        animated: true,
-        className: `edge-${edge.direction}`
+        });
+        return;
       }
-    ];
+
+      const gatewayId = gwId(edge.direction);
+      const externalId = extId(edge.target);
+      const data = connectionData(edge.id, [resolve(edge.source), gatewayId, externalId]);
+      edges.push(
+        {
+          id: `${edge.id}-component-gateway`,
+          data,
+          source: resolve(edge.source),
+          sourceHandle: componentHandle(edge.direction, "source"),
+          target: gatewayId,
+          targetHandle: gatewayTargetHandle(edge.direction),
+          type: "smoothstep",
+          animated: true,
+          className: `edge-${edge.direction}`
+        },
+        {
+          id: `${edge.id}-gateway-external`,
+          data,
+          source: gatewayId,
+          sourceHandle: gatewaySourceHandle(edge.direction),
+          target: externalId,
+          targetHandle: externalTargetHandle(edge.direction),
+          label: edge.label,
+          type: "smoothstep",
+          animated: true,
+          className: `edge-${edge.direction}`
+        }
+      );
+    });
   });
 
-  return {
-    nodes,
-    edges,
-    cellSize: {
-      width: layout.width,
-      height: layout.height
-    }
-  };
+  project.sharedExternals.forEach((ext) => {
+    const g = cellGraph.node(`external-${ext.id}`) ?? { x: 0, y: 0 };
+    nodes.push({
+      id: `external-${ext.id}`,
+      type: "external",
+      position: { x: g.x - externalSize / 2, y: g.y - externalSize / 2 },
+      data: {
+        nodeId: `external-${ext.id}`,
+        label: ext.label ?? ext.id,
+        externalType: ext.type,
+        direction: ext.direction ?? "east"
+      },
+      draggable: false
+    });
+  });
+
+  const xs = nodes.map((n) => n.position.x);
+  const ys = nodes.map((n) => n.position.y);
+  const width = (xs.length ? Math.max(...xs) : 0) + 400;
+  const height = (ys.length ? Math.max(...ys) : 0) + 400;
+
+  return { nodes, edges, cellSize: { width, height } };
 }

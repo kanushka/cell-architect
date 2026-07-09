@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { compileCellSource } from "../compiler/compileCellSource";
+import { compileProject } from "../compiler/compileProject";
 
 export const fitViewSpy = vi.fn();
 export const zoomInSpy = vi.fn();
@@ -18,7 +18,7 @@ vi.mock("@xyflow/react", async () => {
 import { DiagramCanvas } from "./DiagramCanvas";
 
 function buildModel(source: string) {
-  const compiled = compileCellSource(source);
+  const compiled = compileProject(source);
   if (!compiled.model) {
     throw new Error("expected a valid model");
   }

@@ -1,38 +1,45 @@
 import { describe, expect, it } from "vitest";
-import { CellDiagramModel } from "../domain/cellModel";
+import { ProjectModel } from "../domain/cellModel";
 import { toReactFlow } from "./flowLayout";
 
 describe("toReactFlow", () => {
   it("routes boundary edges through gateway circles for active bounds", () => {
-    const model: CellDiagramModel = {
+    const project: ProjectModel = {
       title: "Orders",
-      version: "v1",
-      components: [{ id: "OrderAPI", type: "api", line: 3 }],
-      externals: [
-        { id: "CustomerApp", direction: "north" },
-        { id: "Stripe", direction: "south" }
-      ],
-      edges: [
+      cells: [
         {
-          id: "north-CustomerApp-OrderAPI-4",
-          source: "CustomerApp",
-          target: "OrderAPI",
-          direction: "north",
-          kind: "inbound",
-          line: 4
-        },
-        {
-          id: "south-OrderAPI-Stripe-5",
-          source: "OrderAPI",
-          target: "Stripe",
-          direction: "south",
-          kind: "outbound",
-          line: 5
+          id: "main",
+          version: "v1",
+          components: [{ id: "OrderAPI", type: "api", line: 3 }],
+          externals: [
+            { id: "CustomerApp", direction: "north" },
+            { id: "Stripe", direction: "south" }
+          ],
+          edges: [
+            {
+              id: "north-CustomerApp-OrderAPI-4",
+              source: "CustomerApp",
+              target: "OrderAPI",
+              direction: "north",
+              kind: "inbound",
+              line: 4
+            },
+            {
+              id: "south-OrderAPI-Stripe-5",
+              source: "OrderAPI",
+              target: "Stripe",
+              direction: "south",
+              kind: "outbound",
+              line: 5
+            }
+          ]
         }
-      ]
+      ],
+      crossEdges: [],
+      sharedExternals: []
     };
 
-    const flow = toReactFlow(model);
+    const flow = toReactFlow(project);
 
     expect(flow.nodes).toEqual(
       expect.arrayContaining([
@@ -93,58 +100,65 @@ describe("toReactFlow", () => {
   });
 
   it("keeps north and south external components far enough apart for edge labels", () => {
-    const model: CellDiagramModel = {
+    const project: ProjectModel = {
       title: "Orders",
-      version: "v1",
-      components: [{ id: "OrderAPI", type: "api", line: 3 }],
-      externals: [
-        { id: "CustomerApp", direction: "north" },
-        { id: "PartnerPortal", direction: "north" },
-        { id: "Stripe", direction: "south" },
-        { id: "SendGrid", direction: "south" }
-      ],
-      edges: [
+      cells: [
         {
-          id: "north-CustomerApp-OrderAPI-4",
-          source: "CustomerApp",
-          target: "OrderAPI",
-          direction: "north",
-          kind: "inbound",
-          label: "HTTPS",
-          line: 4
-        },
-        {
-          id: "north-PartnerPortal-OrderAPI-5",
-          source: "PartnerPortal",
-          target: "OrderAPI",
-          direction: "north",
-          kind: "inbound",
-          label: "REST",
-          line: 5
-        },
-        {
-          id: "south-OrderAPI-Stripe-6",
-          source: "OrderAPI",
-          target: "Stripe",
-          direction: "south",
-          kind: "outbound",
-          label: "payment",
-          line: 6
-        },
-        {
-          id: "south-OrderAPI-SendGrid-7",
-          source: "OrderAPI",
-          target: "SendGrid",
-          direction: "south",
-          kind: "outbound",
-          label: "email",
-          line: 7
+          id: "main",
+          version: "v1",
+          components: [{ id: "OrderAPI", type: "api", line: 3 }],
+          externals: [
+            { id: "CustomerApp", direction: "north" },
+            { id: "PartnerPortal", direction: "north" },
+            { id: "Stripe", direction: "south" },
+            { id: "SendGrid", direction: "south" }
+          ],
+          edges: [
+            {
+              id: "north-CustomerApp-OrderAPI-4",
+              source: "CustomerApp",
+              target: "OrderAPI",
+              direction: "north",
+              kind: "inbound",
+              label: "HTTPS",
+              line: 4
+            },
+            {
+              id: "north-PartnerPortal-OrderAPI-5",
+              source: "PartnerPortal",
+              target: "OrderAPI",
+              direction: "north",
+              kind: "inbound",
+              label: "REST",
+              line: 5
+            },
+            {
+              id: "south-OrderAPI-Stripe-6",
+              source: "OrderAPI",
+              target: "Stripe",
+              direction: "south",
+              kind: "outbound",
+              label: "payment",
+              line: 6
+            },
+            {
+              id: "south-OrderAPI-SendGrid-7",
+              source: "OrderAPI",
+              target: "SendGrid",
+              direction: "south",
+              kind: "outbound",
+              label: "email",
+              line: 7
+            }
+          ]
         }
-      ]
+      ],
+      crossEdges: [],
+      sharedExternals: []
     };
 
-    const flow = toReactFlow(model);
-    const cell = flow.nodes.find((node) => node.id === "cell-boundary");
+    const flow = toReactFlow(project);
+    const cell = flow.nodes.find((node) => node.id === "cell-main");
     const customerApp = flow.nodes.find((node) => node.id === "external-CustomerApp");
     const partnerPortal = flow.nodes.find((node) => node.id === "external-PartnerPortal");
     const stripe = flow.nodes.find((node) => node.id === "external-Stripe");
@@ -166,31 +180,38 @@ describe("toReactFlow", () => {
   });
 
   it("routes gateway exposure edges without creating external nodes", () => {
-    const model: CellDiagramModel = {
+    const project: ProjectModel = {
       title: "UntitledCell",
-      components: [{ id: "API", type: "service", line: 3 }],
-      externals: [],
-      edges: [
+      cells: [
         {
-          id: "north-north-API-5",
-          source: "north",
-          target: "API",
-          direction: "north",
-          kind: "exposure",
-          line: 5
-        },
-        {
-          id: "east-API-east-6",
-          source: "API",
-          target: "east",
-          direction: "east",
-          kind: "exposure",
-          line: 6
+          id: "main",
+          components: [{ id: "API", type: "service", line: 3 }],
+          externals: [],
+          edges: [
+            {
+              id: "north-north-API-5",
+              source: "north",
+              target: "API",
+              direction: "north",
+              kind: "exposure",
+              line: 5
+            },
+            {
+              id: "east-API-east-6",
+              source: "API",
+              target: "east",
+              direction: "east",
+              kind: "exposure",
+              line: 6
+            }
+          ]
         }
-      ]
+      ],
+      crossEdges: [],
+      sharedExternals: []
     };
 
-    const flow = toReactFlow(model);
+    const flow = toReactFlow(project);
 
     expect(flow.nodes).toEqual(
       expect.arrayContaining([
@@ -236,25 +257,32 @@ describe("toReactFlow", () => {
   });
 
   it("draws internal dependencies as arrows with a small arrow head", () => {
-    const model: CellDiagramModel = {
-      components: [
-        { id: "WebApp", type: "web-app", line: 1 },
-        { id: "OrderAPI", type: "api", line: 2 }
-      ],
-      externals: [],
-      edges: [
+    const project: ProjectModel = {
+      cells: [
         {
-          id: "internal-WebApp-OrderAPI-3",
-          source: "WebApp",
-          target: "OrderAPI",
-          direction: "internal",
-          kind: "internal",
-          line: 3
+          id: "main",
+          components: [
+            { id: "WebApp", type: "web-app", line: 1 },
+            { id: "OrderAPI", type: "api", line: 2 }
+          ],
+          externals: [],
+          edges: [
+            {
+              id: "internal-WebApp-OrderAPI-3",
+              source: "WebApp",
+              target: "OrderAPI",
+              direction: "internal",
+              kind: "internal",
+              line: 3
+            }
+          ]
         }
-      ]
+      ],
+      crossEdges: [],
+      sharedExternals: []
     };
 
-    const flow = toReactFlow(model);
+    const flow = toReactFlow(project);
     const internalEdge = flow.edges.find((edge) => edge.id === "internal-WebApp-OrderAPI-3");
 
     expect(internalEdge?.markerEnd).toEqual(
@@ -267,22 +295,29 @@ describe("toReactFlow", () => {
   });
 
   it("uses display labels and external types from declarations", () => {
-    const model: CellDiagramModel = {
-      components: [{ id: "api", label: "OrderAPI", type: "api", line: 1 }],
-      externals: [{ id: "inv", label: "InventoryAPI", type: "api", direction: "east", line: 2 }],
-      edges: [
+    const project: ProjectModel = {
+      cells: [
         {
-          id: "east-api-inv-3",
-          source: "api",
-          target: "inv",
-          direction: "east",
-          kind: "outbound",
-          line: 3
+          id: "main",
+          components: [{ id: "api", label: "OrderAPI", type: "api", line: 1 }],
+          externals: [{ id: "inv", label: "InventoryAPI", type: "api", direction: "east", line: 2 }],
+          edges: [
+            {
+              id: "east-api-inv-3",
+              source: "api",
+              target: "inv",
+              direction: "east",
+              kind: "outbound",
+              line: 3
+            }
+          ]
         }
-      ]
+      ],
+      crossEdges: [],
+      sharedExternals: []
     };
 
-    const flow = toReactFlow(model);
+    const flow = toReactFlow(project);
 
     expect(flow.nodes).toEqual(
       expect.arrayContaining([
@@ -302,5 +337,49 @@ describe("toReactFlow", () => {
         })
       ])
     );
+  });
+
+  it("keeps single-cell node ids un-namespaced", () => {
+    const project: ProjectModel = {
+      cells: [{ id: "main", components: [{ id: "api" }], externals: [], edges: [] }],
+      crossEdges: [],
+      sharedExternals: []
+    };
+    const flow = toReactFlow(project);
+    expect(flow.nodes.some((n) => n.id === "api")).toBe(true);
+    expect(flow.nodes.some((n) => n.id === "cell-main")).toBe(true);
+  });
+
+  it("namespaces component ids and lays out multiple cells without overlapping", () => {
+    const project: ProjectModel = {
+      cells: [
+        { id: "orders", components: [{ id: "api" }], externals: [], edges: [] },
+        { id: "products", components: [{ id: "api" }], externals: [], edges: [] }
+      ],
+      crossEdges: [],
+      sharedExternals: []
+    };
+    const flow = toReactFlow(project);
+    expect(flow.nodes.some((n) => n.id === "orders::api")).toBe(true);
+    expect(flow.nodes.some((n) => n.id === "products::api")).toBe(true);
+    const ordersCell = flow.nodes.find((n) => n.id === "cell-orders")!;
+    const productsCell = flow.nodes.find((n) => n.id === "cell-products")!;
+    // With no cross-cell edges, dagre (rankdir LR) places both cells in the same rank
+    // and separates them along the perpendicular axis, so position differs on y here.
+    expect(ordersCell.position).not.toEqual(productsCell.position);
+  });
+
+  it("positions a shared external once between the cells that use it", () => {
+    const project: ProjectModel = {
+      cells: [
+        { id: "orders", components: [{ id: "api" }], externals: [], edges: [] },
+        { id: "products", components: [{ id: "api" }], externals: [], edges: [] }
+      ],
+      crossEdges: [],
+      sharedExternals: [{ id: "s3", direction: "east" }]
+    };
+    const flow = toReactFlow(project);
+    const sharedNodes = flow.nodes.filter((n) => n.id === "external-s3");
+    expect(sharedNodes).toHaveLength(1);
   });
 });

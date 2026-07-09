@@ -15,7 +15,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { CellDiagramModel } from "../domain/cellModel";
+import { ProjectModel } from "../domain/cellModel";
 import { FitScreenIcon, ZoomInIcon, ZoomOutIcon } from "../ui/ControlIcons";
 import { exportPng, exportSvg } from "./exportImage";
 import { toReactFlow } from "./flowLayout";
@@ -180,7 +180,7 @@ function FitViewController({
   fitKey
 }: {
   insets: DiagramCanvasInsets;
-  model: CellDiagramModel;
+  model: ProjectModel;
   fitKey?: string;
 }) {
   const { fitView } = useReactFlow();
@@ -248,7 +248,7 @@ function ExportControls({ filename }: { filename: string }) {
 }
 
 interface DiagramCanvasProps {
-  model: CellDiagramModel | null;
+  model: ProjectModel | null;
   insets?: DiagramCanvasInsets;
   fitKey?: string;
 }

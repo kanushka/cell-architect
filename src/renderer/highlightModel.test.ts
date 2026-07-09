@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { compileCellSource } from "../compiler/compileCellSource";
+import { compileProject } from "../compiler/compileProject";
 import { defaultSampleSource } from "../storage/defaultSample";
 import { toReactFlow } from "./flowLayout";
 import { connectionIdsForNode, highlightedNodeIdsForConnections } from "./highlightModel";
 
 describe("highlightModel", () => {
   it("finds every connection linked to a hovered component", () => {
-    const compiled = compileCellSource(defaultSampleSource);
+    const compiled = compileProject(defaultSampleSource);
 
     expect(compiled.model).not.toBeNull();
 
@@ -16,15 +16,15 @@ describe("highlightModel", () => {
 
     expect(connectionIds).toEqual(
       expect.arrayContaining([
-        "north-pp-orders-15",
-        "west-ap-orders-16",
-        "internal-WebApp-orders-18",
-        "internal-orders-odb-19",
-        "internal-orders-ep-20",
-        "east-orders-inventories-22",
-        "east-orders-customers-23",
-        "south-orders-Stripe-24",
-        "south-orders-SendGrid-25"
+        "north-pp-orders-13",
+        "west-ap-orders-14",
+        "internal-WebApp-orders-15",
+        "internal-orders-odb-16",
+        "internal-orders-ep-17",
+        "east-orders-inventories-18",
+        "east-orders-customers-19",
+        "south-orders-Stripe-20",
+        "south-orders-SendGrid-21"
       ])
     );
     expect(Array.from(highlightedNodeIds)).toEqual(

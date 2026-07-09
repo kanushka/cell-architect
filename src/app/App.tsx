@@ -1,6 +1,6 @@
 import { BookOpen } from "lucide-react";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { compileCellSource } from "../compiler/compileCellSource";
+import { compileProject } from "../compiler/compileProject";
 import { DiagramCanvas } from "../renderer/DiagramCanvas";
 import { clearShareUrl, decodeShareSource, readShareParam } from "../share/shareLink";
 import {
@@ -89,7 +89,7 @@ export function App() {
         return;
       }
 
-      const name = compileCellSource(source).model?.title || "Shared Cell";
+      const name = compileProject(source).model?.title || "Shared Cell";
       const state = loadRepository();
 
       if (state.documents.length < MAX_DOCUMENTS) {
@@ -108,7 +108,7 @@ export function App() {
 
   const activeDocument =
     repository.documents.find((document) => document.id === repository.activeDocumentId) ?? repository.documents[0];
-  const compiled = useMemo(() => compileCellSource(activeDocument.source), [activeDocument.source]);
+  const compiled = useMemo(() => compileProject(activeDocument.source), [activeDocument.source]);
   const lastValidModel = useRef(compiled.model);
   if (compiled.model) {
     lastValidModel.current = compiled.model;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ProjectModel } from "../domain/cellModel";
 import { toReactFlow } from "./flowLayout";
+import { compileProject } from "../compiler/compileProject";
 
 describe("toReactFlow", () => {
   it("routes boundary edges through gateway circles for active bounds", () => {
@@ -381,6 +382,37 @@ describe("toReactFlow", () => {
     const flow = toReactFlow(project);
     const sharedNodes = flow.nodes.filter((n) => n.id === "external-s3");
     expect(sharedNodes).toHaveLength(1);
+  });
+
+  it("renders one shared external end-to-end via compileProject and connects both cells' edges to it", () => {
+    const source = `cell orders {
+  component api
+  api -> east s3
+}
+
+cell products {
+  component api
+  api -> south s3
+}`;
+    const compiled = compileProject(source);
+    expect(compiled.diagnostics).toEqual([]);
+    const flow = toReactFlow(compiled.model!);
+
+    const sharedNodes = flow.nodes.filter((n) => n.id === "external-s3");
+    expect(sharedNodes).toHaveLength(1);
+
+    expect(flow.edges.some((e) => e.target === "external-s3")).toBe(true);
+    expect(flow.edges.some((e) => e.source === "external-s3")).toBe(false);
+    // no edge should ever target/source a per-cell-qualified id for a SHARED external
+    expect(
+      flow.edges.some(
+        (e) =>
+          e.target === "external-orders-s3" ||
+          e.source === "external-orders-s3" ||
+          e.target === "external-products-s3" ||
+          e.source === "external-products-s3"
+      )
+    ).toBe(false);
   });
 
   it("emits a connected cross edge as component -> gateway -> gateway -> component using step edges", () => {

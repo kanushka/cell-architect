@@ -236,7 +236,8 @@ cell orders {
 
 cell products {
   component api
-  api -> south s3 as "AWS S3" storage
+  south s3 as "AWS S3" storage
+  api -> s3
 }
 ```
 
@@ -345,7 +346,8 @@ cell orders as "Order Cell" {
 
 cell products {
   component api
-  api -> south s3 as "AWS S3" storage
+  south s3 as "AWS S3" storage
+  api -> s3
 }
 
 orders.api -> products.api : get stock

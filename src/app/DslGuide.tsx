@@ -96,7 +96,7 @@ const notationSections: NotationSection[] = [
     detail:
       "An external id used on a boundary by two or more cells becomes one shared node placed between them. Direction and alias/type are set per use-site.",
     examples: [
-      { code: 'cell orders {\n  component api\n  api -> east s3\n}\n\ncell products {\n  component api\n  api -> south s3 as "AWS S3" storage\n}' }
+      { code: 'cell orders {\n  component api\n  api -> east s3\n}\n\ncell products {\n  component api\n  south s3 as "AWS S3" storage\n  api -> s3\n}' }
     ]
   },
   {

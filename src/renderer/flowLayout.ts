@@ -233,10 +233,11 @@ function externalNodeId(cellId: string, externalId: string, multi: boolean) {
   return multi ? `external-${cellId}-${externalId}` : `external-${externalId}`;
 }
 
-function emitCellEdges(cell: CellModel, multi: boolean, edges: Edge[]) {
+function emitCellEdges(cell: CellModel, multi: boolean, sharedExternalIds: Set<string>, edges: Edge[]) {
   const resolve = (compId: string) => namespaced(cell.id, compId, multi);
   const gwId = (direction: string) => gatewayNodeId(cell.id, direction, multi);
-  const extId = (externalId: string) => externalNodeId(cell.id, externalId, multi);
+  const extId = (externalId: string) =>
+    sharedExternalIds.has(externalId) ? `external-${externalId}` : externalNodeId(cell.id, externalId, multi);
 
   cell.edges.forEach((edge) => {
     if (edge.kind === "internal") {
@@ -527,6 +528,7 @@ export function toReactFlow(project: ProjectModel) {
   const edges: Edge[] = [];
 
   const cellBoxes = new Map<string, { originX: number; originY: number; width: number; height: number }>();
+  const sharedExternalIds = new Set(project.sharedExternals.map((ext) => ext.id));
 
   const layouts = new Map<string, ReturnType<typeof layoutCell>>();
   project.cells.forEach((cell) => layouts.set(cell.id, layoutCell(cell)));
@@ -636,7 +638,7 @@ export function toReactFlow(project: ProjectModel) {
       });
     });
 
-    emitCellEdges(cell, multi, edges);
+    emitCellEdges(cell, multi, sharedExternalIds, edges);
   });
 
   emitCrossEdges(project, multi, edges);

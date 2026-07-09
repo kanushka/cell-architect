@@ -45,4 +45,27 @@ describe("splitCells", () => {
     const result = splitCells(`cell a {\n  cell b {\n  }\n}`);
     expect(result.diagnostics[0]).toMatchObject({ message: "Nested cells are not supported.", line: 2 });
   });
+
+  it("reports a malformed cell header", () => {
+    const result = splitCells(`cell orders as bad name {\n}`);
+    expect(result.diagnostics[0]).toEqual({
+      severity: "error",
+      message: 'Malformed cell header. Use: cell <id> [as "label"] {',
+      line: 1,
+      column: 1
+    });
+  });
+
+  it("reports an unexpected closing brace", () => {
+    const result = splitCells(`}\n`);
+    expect(result.diagnostics).toEqual([
+      { severity: "error", message: "Unexpected closing brace.", line: 1, column: 1 }
+    ]);
+  });
+
+  it("treats an empty quoted label as undefined", () => {
+    const result = splitCells(`cell x as "" {\n}`);
+    expect(result.diagnostics).toEqual([]);
+    expect(result.cells[0]).toMatchObject({ id: "x", label: undefined });
+  });
 });

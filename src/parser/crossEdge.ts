@@ -1,4 +1,5 @@
 import { CrossEntry, CrossExit } from "../domain/cellModel";
+import { splitLabel } from "./labels";
 
 export type DirTokenResult =
   | { exit: CrossExit; entry: CrossEntry }
@@ -34,13 +35,6 @@ export interface ParsedCrossEdge {
 }
 
 export type CrossEdgeParse = ParsedCrossEdge | { error: "bare-south" | "bad-token"; line: number } | null;
-
-function splitLabel(statement: string) {
-  const index = statement.indexOf(":");
-  if (index === -1) { return { body: statement.trim(), label: undefined as string | undefined }; }
-  const label = statement.slice(index + 1).trim();
-  return { body: statement.slice(0, index).trim(), label: label.length > 0 ? label : undefined };
-}
 
 function qualified(token: string): { cell: string; comp: string } | null {
   const dot = token.indexOf(".");

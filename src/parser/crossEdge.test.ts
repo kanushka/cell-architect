@@ -43,4 +43,7 @@ describe("parseCrossEdge", () => {
   it("returns a bare-south error result", () => {
     expect(parseCrossEdge("api -> south products.api", 5)).toEqual({ error: "bare-south", line: 5 });
   });
+  it("propagates a bad-token error result", () => {
+    expect(parseCrossEdge("api -> west products.api", 1)).toEqual({ error: "bad-token", line: 1 });
+  });
 });

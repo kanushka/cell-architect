@@ -8,6 +8,7 @@ import {
   ParsedExternal,
   ParseResult
 } from "../domain/cellModel";
+import { splitLabel } from "./labels";
 
 const boundaryDirections = new Set<BoundaryDirection>(["north", "east", "south", "west"]);
 const reservedKeywords = new Set(["title", "version", "component", "as", ...boundaryDirections]);
@@ -22,19 +23,6 @@ function tokenize(statement: string): string[] {
   }
 
   return tokens;
-}
-
-function splitLabel(statement: string) {
-  const index = statement.indexOf(":");
-  if (index === -1) {
-    return { body: statement.trim(), label: undefined };
-  }
-
-  const label = statement.slice(index + 1).trim();
-  return {
-    body: statement.slice(0, index).trim(),
-    label: label.length > 0 ? label : undefined
-  };
 }
 
 function edgeId(direction: EdgeDirection, source: string, target: string, line: number) {

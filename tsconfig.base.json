@@ -3,7 +3,6 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "allowJs": false,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -14,9 +13,6 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
-    "types": ["vitest/globals", "@testing-library/jest-dom", "node"],
-    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.app.tsbuildinfo"
-  },
-  "include": ["src"]
+    "jsx": "react-jsx"
+  }
 }

@@ -257,7 +257,7 @@ describe("toReactFlow", () => {
     );
   });
 
-  it("draws internal dependencies as arrows with a small arrow head", () => {
+  it("draws internal component dependencies as floating edges with an arrow head", () => {
     const project: ProjectModel = {
       cells: [
         {
@@ -286,12 +286,48 @@ describe("toReactFlow", () => {
     const flow = toReactFlow(project);
     const internalEdge = flow.edges.find((edge) => edge.id === "internal-WebApp-OrderAPI-3");
 
+    expect(internalEdge?.type).toBe("floating");
+    // A React Flow arrow marker (orient="auto") is used so it aligns to the path tangent.
     expect(internalEdge?.markerEnd).toEqual(
-      expect.objectContaining({
-        type: "arrowclosed",
-        width: 14,
-        height: 14
-      })
+      expect.objectContaining({ type: "arrow", color: "#475569" })
+    );
+  });
+
+  it("floats internal component edges but keeps gateway edges on fixed-handle routing", () => {
+    const project: ProjectModel = {
+      cells: [
+        {
+          id: "main",
+          components: [{ id: "OrderAPI", type: "api", line: 1 }],
+          externals: [{ id: "Stripe", direction: "east", line: 2 }],
+          edges: [
+            {
+              id: "east-OrderAPI-Stripe-3",
+              source: "OrderAPI",
+              target: "Stripe",
+              direction: "east",
+              kind: "outbound",
+              line: 3
+            }
+          ]
+        }
+      ],
+      crossEdges: [],
+      sharedExternals: []
+    };
+
+    const flow = toReactFlow(project);
+    const componentGateway = flow.edges.find((edge) => edge.id === "east-OrderAPI-Stripe-3-component-gateway");
+    const gatewayExternal = flow.edges.find((edge) => edge.id === "east-OrderAPI-Stripe-3-gateway-external");
+
+    // Gateway edges keep their fixed-handle routing (only component-to-component edges float).
+    expect(componentGateway?.type).toBe("smoothstep");
+    expect(componentGateway?.sourceHandle).toBe("component-right-source");
+    expect(componentGateway?.markerEnd).toBeUndefined();
+    // The terminal segment landing on the external carries the colored arrow marker.
+    expect(gatewayExternal?.type).toBe("smoothstep");
+    expect(gatewayExternal?.markerEnd).toEqual(
+      expect.objectContaining({ type: "arrow", color: "#ea580c" })
     );
   });
 

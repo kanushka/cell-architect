@@ -221,6 +221,35 @@ function connectionData(connectionId: string, connectedNodeIds: string[]) {
   };
 }
 
+// Arrow-head colors mirror the per-direction edge stroke colors in diagram.css.
+const EDGE_ARROW_COLORS: Record<string, string> = {
+  north: "#0284c7",
+  east: "#ea580c",
+  south: "#059669",
+  west: "#7c3aed"
+};
+const DEFAULT_ARROW_COLOR = "#475569";
+const CROSS_ARROW_COLOR = "#7c3aed";
+
+// A React Flow arrow marker (orient="auto" so it aligns to the path tangent),
+// colored to match the edge. Used on the terminal segment of each logical edge.
+// markerUnits "userSpaceOnUse" keeps the head a fixed size, so it does not balloon
+// when a selected/highlighted edge thickens its stroke.
+function arrowMarker(color: string) {
+  return {
+    type: MarkerType.Arrow,
+    color,
+    width: 25,
+    height: 25,
+    strokeWidth: 1.6,
+    markerUnits: "userSpaceOnUse"
+  };
+}
+
+function directionArrow(direction: string) {
+  return arrowMarker(EDGE_ARROW_COLORS[direction] ?? DEFAULT_ARROW_COLOR);
+}
+
 function namespaced(cellId: string, id: string, multi: boolean) {
   return multi ? `${cellId}::${id}` : id;
 }
@@ -251,13 +280,9 @@ function emitCellEdges(cell: CellModel, multi: boolean, sharedExternalIds: Set<s
         target: resolve(edge.target),
         targetHandle: handles.targetHandle,
         label: edge.label,
-        type: "smoothstep",
+        type: "floating",
         animated: false,
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          width: 14,
-          height: 14
-        },
+        markerEnd: directionArrow(edge.direction),
         className: `edge-${edge.direction}`
       });
       return;
@@ -289,6 +314,7 @@ function emitCellEdges(cell: CellModel, multi: boolean, sharedExternalIds: Set<s
           targetHandle: componentHandle(edge.direction, "target"),
           type: "smoothstep",
           animated: true,
+          markerEnd: directionArrow(edge.direction),
           className: `edge-${edge.direction}`
         }
       );
@@ -311,6 +337,7 @@ function emitCellEdges(cell: CellModel, multi: boolean, sharedExternalIds: Set<s
           label: edge.label,
           type: "smoothstep",
           animated: true,
+          markerEnd: directionArrow(edge.direction),
           className: `edge-${edge.direction}`
         });
         return;
@@ -357,6 +384,7 @@ function emitCellEdges(cell: CellModel, multi: boolean, sharedExternalIds: Set<s
         label: edge.label,
         type: "smoothstep",
         animated: true,
+        markerEnd: directionArrow(edge.direction),
         className: `edge-${edge.direction}`
       }
     );
@@ -408,6 +436,7 @@ function emitCrossEdges(project: ProjectModel, multi: boolean, edges: Edge[]) {
         targetHandle: componentHandle(edge.entry, "target"),
         type: "step",
         animated: true,
+        markerEnd: arrowMarker(CROSS_ARROW_COLOR),
         className: "edge-cross"
       }
     );
@@ -490,6 +519,7 @@ function emitDecoupledCrossEdges(
         label: edge.label,
         type: "step",
         animated: true,
+        markerEnd: arrowMarker(CROSS_ARROW_COLOR),
         className: "edge-cross"
       }
     );
@@ -516,6 +546,7 @@ function emitDecoupledCrossEdges(
         targetHandle: componentHandle(edge.entry, "target"),
         type: "step",
         animated: true,
+        markerEnd: arrowMarker(CROSS_ARROW_COLOR),
         className: "edge-cross"
       }
     );

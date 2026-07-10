@@ -5,10 +5,12 @@ import {
   Position,
   ReactFlow,
   ReactFlowProvider,
+  useInternalNode,
   useReactFlow,
   useViewport,
   type Edge,
   type EdgeProps,
+  type InternalNode,
   type Node,
   type NodeProps,
   getBezierPath,
@@ -21,6 +23,7 @@ import { ProjectModel } from "../domain/cellModel";
 import { FitScreenIcon, ZoomInIcon, ZoomOutIcon } from "../ui/ControlIcons";
 // TODO: re-enable when the PNG/SVG image export feature is complete.
 // import { exportPng, exportSvg } from "./exportImage";
+import { getFloatingAnchors, shapeForNodeType, type NodeRect } from "./floatingGeometry";
 import { toReactFlow } from "./flowLayout";
 import { connectionIdsForNode, edgeConnectionId, highlightedNodeIdsForConnections } from "./highlightModel";
 
@@ -113,22 +116,26 @@ function GatewayNode({ data }: NodeProps) {
   );
 }
 
+function EdgeLabel({ label, x, y }: { label: EdgeProps["label"]; x: number; y: number }) {
+  if (!label) {
+    return null;
+  }
+  return (
+    <EdgeLabelRenderer>
+      <div className="edge-label" style={{ transform: `translate(-50%, -50%) translate(${x}px,${y}px)` }}>
+        {label}
+      </div>
+    </EdgeLabelRenderer>
+  );
+}
+
 function makePathEdge(computePath: (props: EdgeProps) => [string, number, number, ...unknown[]]) {
   return function PathEdge(props: EdgeProps) {
     const [edgePath, labelX, labelY] = computePath(props);
     return (
       <>
         <path className="react-flow__edge-path" d={edgePath} markerEnd={props.markerEnd} />
-        {props.label ? (
-          <EdgeLabelRenderer>
-            <div
-              className="edge-label"
-              style={{ transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)` }}
-            >
-              {props.label}
-            </div>
-          </EdgeLabelRenderer>
-        ) : null}
+        <EdgeLabel label={props.label} x={labelX} y={labelY} />
       </>
     );
   };
@@ -136,6 +143,64 @@ function makePathEdge(computePath: (props: EdgeProps) => [string, number, number
 
 const LabeledEdge = makePathEdge((props) => getBezierPath(props));
 const StepEdge = makePathEdge((props) => getSmoothStepPath({ ...props, borderRadius: 0 }));
+
+const FALLBACK_NODE_SIZE: Record<string, number> = {
+  component: 112,
+  external: 106,
+  gateway: 34
+};
+
+function toNodeRect(node: InternalNode): NodeRect {
+  const fallback = FALLBACK_NODE_SIZE[node.type ?? ""] ?? 40;
+  const { x, y } = node.internals.positionAbsolute;
+  return {
+    x,
+    y,
+    width: node.measured?.width ?? fallback,
+    height: node.measured?.height ?? fallback,
+    shape: shapeForNodeType(node.type)
+  };
+}
+
+function dominantPositions(dx: number, dy: number): { source: Position; target: Position } {
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return dx >= 0
+      ? { source: Position.Right, target: Position.Left }
+      : { source: Position.Left, target: Position.Right };
+  }
+  return dy >= 0
+    ? { source: Position.Bottom, target: Position.Top }
+    : { source: Position.Top, target: Position.Bottom };
+}
+
+// Floating edge: attaches to each node's perimeter at the point facing the other node,
+// so component circles no longer snap to four fixed handles.
+function FloatingEdge(props: EdgeProps) {
+  const sourceNode = useInternalNode(props.source);
+  const targetNode = useInternalNode(props.target);
+
+  if (!sourceNode || !targetNode) {
+    return null;
+  }
+
+  const { sx, sy, tx, ty } = getFloatingAnchors(toNodeRect(sourceNode), toNodeRect(targetNode));
+  const positions = dominantPositions(tx - sx, ty - sy);
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX: sx,
+    sourceY: sy,
+    sourcePosition: positions.source,
+    targetX: tx,
+    targetY: ty,
+    targetPosition: positions.target
+  });
+
+  return (
+    <>
+      <path className="react-flow__edge-path" d={edgePath} markerEnd={props.markerEnd} />
+      <EdgeLabel label={props.label} x={labelX} y={labelY} />
+    </>
+  );
+}
 
 const nodeTypes = {
   cellBoundary: memo(CellBoundaryNode),
@@ -146,7 +211,8 @@ const nodeTypes = {
 
 const edgeTypes = {
   smoothstep: memo(LabeledEdge),
-  step: memo(StepEdge)
+  step: memo(StepEdge),
+  floating: memo(FloatingEdge)
 };
 
 function sameConnectionIds(left: string[], right: string[]) {

@@ -1,7 +1,7 @@
 {
   "name": "@kanushka/cell-diagram-react",
   "version": "0.1.0",
-  "description": "React component and DSL for rendering cell architecture diagrams, with a WSO2 cell-diagram converter.",
+  "description": "React component and DSL for rendering cell architecture diagrams",
   "license": "MIT",
   "type": "module",
   "sideEffects": ["*.css"],

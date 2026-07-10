@@ -2,6 +2,7 @@ export { compileProject } from "./compiler/compileProject";
 export { compileCellSource } from "./compiler/compileCellSource";
 export { parseProject } from "./parser/parseProject";
 export { DiagramCanvas } from "./renderer/DiagramCanvas";
+export { CellDiagram } from "./renderer/CellDiagram";
 
 export type {
   ProjectModel,
@@ -15,3 +16,4 @@ export type {
   Diagnostic,
   BoundaryDirection
 } from "./domain/cellModel";
+export type { CellDiagramProps } from "./renderer/CellDiagram";

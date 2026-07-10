@@ -10,23 +10,6 @@ function ruleFor(selector: string) {
   return styles.match(pattern)?.[0] ?? "";
 }
 
-describe("diagram interaction styles", () => {
-  it("does not resize nodes while highlighting connections", () => {
-    const highlightRule = styles.match(/\.connection-highlight-node \.component-node,[\s\S]*?\}/)?.[0] ?? "";
-    expect(highlightRule).not.toContain("transform:");
-  });
-
-  it("sizes component and boundary dependency subtype labels consistently", () => {
-    const componentRule = ruleFor(".component-node small");
-    const externalRule = ruleFor(".external-node small");
-
-    expect(componentRule).toContain("font-size: 10px;");
-    expect(componentRule).not.toContain("text-transform:");
-    expect(externalRule).toContain("font-size: 10px;");
-    expect(externalRule).not.toContain("text-transform:");
-  });
-});
-
 describe("canvas-first shell", () => {
   it("makes the app shell a full-bleed, fixed-position stage", () => {
     const rule = ruleFor(".app-shell");

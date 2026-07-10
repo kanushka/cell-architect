@@ -8,6 +8,10 @@ export default defineConfig(({ command }) => ({
     command === "serve"
       ? {
           alias: {
+            "@kanushka/cell-diagram-react/style.css": resolve(
+              __dirname,
+              "../../packages/cell-diagram-react/dist/style.css"
+            ),
             "@kanushka/cell-diagram-react": resolve(
               __dirname,
               "../../packages/cell-diagram-react/src/index.ts"
@@ -20,6 +24,10 @@ export default defineConfig(({ command }) => ({
     globals: true,
     setupFiles: "./src/test/setup.ts",
     alias: {
+      "@kanushka/cell-diagram-react/style.css": resolve(
+        __dirname,
+        "../../packages/cell-diagram-react/src/renderer/diagram.css"
+      ),
       "@kanushka/cell-diagram-react": resolve(
         __dirname,
         "../../packages/cell-diagram-react/src/index.ts"

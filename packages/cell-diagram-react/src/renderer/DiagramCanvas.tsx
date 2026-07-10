@@ -15,6 +15,7 @@ import {
   getSmoothStepPath
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import "./diagram.css";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { ProjectModel } from "../domain/cellModel";
 import { FitScreenIcon, ZoomInIcon, ZoomOutIcon } from "../ui/ControlIcons";

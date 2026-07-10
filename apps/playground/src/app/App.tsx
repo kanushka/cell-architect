@@ -21,6 +21,7 @@ import { HelpPanel } from "./HelpPanel";
 import { Modal } from "./Modal";
 import { ShareButton } from "./ShareButton";
 import { ShareImportDialog } from "./ShareImportDialog";
+import "@kanushka/cell-diagram-react/style.css";
 import "./styles.css";
 
 function downloadText(filename: string, content: string) {

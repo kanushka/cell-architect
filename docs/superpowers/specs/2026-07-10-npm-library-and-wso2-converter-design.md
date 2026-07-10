@@ -25,53 +25,101 @@ import "@kanushka/cell-diagram-react/style.css";
 
 - **Public surface:** `CellDiagram` React component + `wso2ToDsl` converter (plus the
   types/`compileProject` they depend on). Not shipping a broad DSL toolkit surface beyond that.
-- **Repo shape:** dual-purpose — publishable library **and** the existing demo app. Firebase
-  hosting untouched.
+- **Repo shape:** **npm-workspaces monorepo** — `packages/cell-diagram-react` (the published
+  library) and `apps/playground` (the existing workbench, consuming the library as a workspace
+  dependency). Firebase hosting preserved, repointed at the app's build output.
 - **Sequencing:** library packaging first, converter second.
 - **Converter fidelity:** semantically equivalent valid DSL (renders the same diagram), **not** a
   byte-for-byte match of any hand-written DSL. Generated alias ids may differ from a human's.
 - **Observations:** `observations[]` metrics and any `observationOnly: true` connection are
   **dropped entirely** — no declaration, no edge. The converter has zero observation logic.
 
+## Project structure (monorepo)
+
+```
+cell-architect/
+├─ package.json               root; private; "workspaces": ["packages/*", "apps/*"]
+├─ package-lock.json          single lockfile for the whole workspace
+├─ tsconfig.base.json         shared compiler options; each package extends it
+├─ .github/workflows/         ci.yml, release.yml
+├─ firebase.json, .firebaserc repointed at apps/playground/dist
+├─ docs/                      specs, plans, dsl-guide (stay at root)
+│
+├─ packages/
+│  └─ cell-diagram-react/     THE LIBRARY → published as @kanushka/cell-diagram-react
+│     ├─ package.json         name, exports, peerDeps, build/test scripts, publishConfig
+│     ├─ tsconfig.json        extends ../../tsconfig.base.json
+│     ├─ vite.config.ts       build.lib (entry src/index.ts) + dts + vitest
+│     ├─ src/
+│     │  ├─ index.ts          public entry (see Public entry)
+│     │  ├─ domain/           model + diagnostic types
+│     │  ├─ parser/           Cell DSL parser
+│     │  ├─ compiler/         parse → ProjectModel
+│     │  ├─ renderer/         DiagramCanvas + CellDiagram wrapper + diagram CSS
+│     │  ├─ converter/        (new) wso2ToDsl + WSO2 types
+│     │  └─ ui/               ControlIcons (used by renderer)
+│     └─ dist/                build output: index.js, index.d.ts, style.css
+│
+└─ apps/
+   └─ playground/             THE DEMO → the Firebase-hosted workbench
+      ├─ package.json         depends on @kanushka/cell-diagram-react: "*"
+      ├─ tsconfig.json        extends ../../tsconfig.base.json
+      ├─ vite.config.ts       app build/dev; dev alias → library src for HMR
+      ├─ index.html
+      └─ src/
+         ├─ main.tsx          app entry
+         ├─ app/              editor shell, panels, app-shell CSS
+         ├─ storage/          localStorage repo + sample
+         └─ share/            share-via-link
+```
+
+The current `src/*` folders move into these two homes: `domain, parser, compiler, renderer,
+converter, ui` → the library; `app, storage, share, main.tsx, index.html` → the playground.
+Every cross-folder import updates accordingly, and app-only imports of library modules become
+package imports (`@kanushka/cell-diagram-react`).
+
 ## Workstream 1 — Library packaging
 
 ### Public entry
 
-New `src/index.ts` exporting:
+`packages/cell-diagram-react/src/index.ts` exporting:
 
 - `CellDiagram` — the React component (see Workstream 2).
 - `wso2ToDsl` — the converter (see Workstream 3), plus its input types.
-- `compileProject`, `parseProject`, and the model/diagnostic types from `src/domain/cellModel.ts`
+- `compileProject`, `parseProject`, and the model/diagnostic types from `domain/cellModel.ts`
   that appear in the component props / converter output (TS consumers need them).
 
 ### Build
 
-- Add a library Vite config (`vite.lib.config.ts`) using `build.lib` (ESM output; entry
-  `src/index.ts`) + `vite-plugin-dts` to emit `.d.ts`.
+- Library Vite config with `build.lib` (ESM output; entry `src/index.ts`) + `vite-plugin-dts` for
+  `.d.ts`.
 - **Externalize** `react`, `react-dom`, `react/jsx-runtime` (moved to `peerDependencies`).
-- Keep runtime deps (`@xyflow/react`, `@dagrejs/dagre`, `clsx`, `lucide-react`, `nanoid`,
-  `lz-string`, `html-to-image`) bundled or as normal `dependencies` (not peers) so consumers
-  don't have to manage them.
-- Ship CSS as `dist/style.css` (from `src/app/styles.css` + required `@xyflow/react` styles) that
-  consumers import explicitly. Mark `sideEffects: ["*.css"]`.
+- Keep runtime deps (`@xyflow/react`, `@dagrejs/dagre`, `clsx`, `lucide-react`, `nanoid`) as the
+  library's `dependencies` so consumers don't manage them. `lz-string`/`html-to-image` are
+  share/export concerns and stay with the playground unless the shipped component needs them.
+- Ship CSS as `dist/style.css` (diagram/renderer CSS extracted into the library + required
+  `@xyflow/react` styles) that consumers import explicitly. Mark `sideEffects: ["*.css"]`.
 
-### package.json
+### Library package.json
 
-- Remove `private: true`; add `publishConfig.access: public`.
-- Name `@kanushka/cell-diagram-react`, keep `type: module`.
-- Add `main`/`module`/`types`/`exports` (root + `./style.css`) and `files: ["dist"]`.
-- Move `react`/`react-dom` to `peerDependencies`.
-- Reconcile package manager: the repo has a committed `package-lock.json` but a
-  `packageManager: pnpm` field — standardize on **npm** (drop or align the field) so CI and the
-  lockfile agree.
-- Scripts: `build:lib` (library), `build:app` (demo), `build` = both, existing `dev`/`test`/`lint`
-  unchanged.
+- Name `@kanushka/cell-diagram-react`, `type: module`, `publishConfig.access: public`, not private.
+- `main`/`module`/`types`/`exports` (root + `./style.css`) and `files: ["dist"]`.
+- `react`/`react-dom` in `peerDependencies`.
+- Scripts: `build` (lib), `test`, `lint`.
 
-### Demo app
+### Root + playground wiring
 
-`src/main.tsx` + `src/app/*` stay and keep importing the same `src/` modules directly (relative
-imports during dev). `index.html`, storage, editor, share, and Firebase config are unchanged. The
-demo effectively dogfoods the library's internals.
+- **Root `package.json`:** `private: true`, `workspaces: ["packages/*", "apps/*"]`, and pass-through
+  scripts (`build:lib`, `build:app`, `test`, `lint`) that delegate to the right workspace.
+- **Package manager:** npm workspaces with a single root `package-lock.json`. The
+  `packageManager: pnpm` field is dropped (it disagreed with the committed npm lockfile). Note: npm
+  workspaces do **not** support the `workspace:` dependency protocol — the playground depends on
+  `"@kanushka/cell-diagram-react": "*"` and npm symlinks it.
+- **Dev DX:** the playground's Vite config aliases `@kanushka/cell-diagram-react` to the library's
+  `src/index.ts` in dev so HMR works against source without a prior lib build. The production app
+  build and CI resolve the real package (built `dist`).
+- **Firebase:** `firebase.json` `public` repointed to `apps/playground/dist`; deploy still run from
+  repo root.
 
 ## Workstream 2 — `CellDiagram` component
 
@@ -100,7 +148,7 @@ Behavior:
 
 ## Workstream 3 — WSO2 converter
 
-Self-contained module `src/converter/`:
+Self-contained module `packages/cell-diagram-react/src/converter/`:
 
 - `wso2Model.ts` — TypeScript types for the WSO2 input (`Wso2CellModel`, `Wso2Component`,
   `Wso2Service`, `Wso2Gateway`, `Wso2Connection`).
@@ -177,12 +225,13 @@ the model `name`. Default off (the reference example omits it). Kept minimal; ex
 
 ## Workstream 5 — CI / release
 
-- `.github/workflows/ci.yml` — on push + PR: `npm ci`, `npm run lint`, `tsc` typecheck,
-  `npm test`, `npm run build:lib`. Node 20.
-- `.github/workflows/release.yml` — on `v*` tag push: build lib, `npm publish --access public`
-  using the `NPM_TOKEN` repo secret. The published version is whatever is in `package.json` at the
-  tagged commit. (Changesets deferred — simple tag-based publish for v1.)
-- Both use npm to match the committed `package-lock.json`.
+- `.github/workflows/ci.yml` — on push + PR: `npm ci` (root, installs all workspaces),
+  `npm run lint`, `tsc` typecheck, `npm test`, `npm run build:lib`. Node 20.
+- `.github/workflows/release.yml` — on `v*` tag push: `npm ci`, build the library workspace, then
+  `npm publish -w @kanushka/cell-diagram-react --access public` using the `NPM_TOKEN` repo secret.
+  The published version is whatever is in the library `package.json` at the tagged commit.
+  (Changesets deferred — simple tag-based publish for v1.)
+- Both use npm workspaces against the single root `package-lock.json`.
 
 ## Out of scope
 
@@ -198,3 +247,7 @@ the model `name`. Default off (the reference example omits it). Kept minimal; ex
 - `@xyflow/react` CSS must be included in the shipped `style.css` or the diagram renders unstyled
   for consumers.
 - npm scope `@kanushka` must exist / be claimed before the first publish.
+- **Monorepo migration is the largest single step:** moving `src/*` into two workspaces rewrites
+  import paths across nearly every file and test, and repoints Firebase, tsconfig, and vitest. The
+  plan should do the move as one mechanical commit (git mv + import rewrite) with the full test
+  suite green before any packaging/converter work begins.

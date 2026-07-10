@@ -20,6 +20,12 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build:lib
-      - run: npm publish -w @kanushka/cell-diagram-react --access public
+      - name: Verify tag matches package version
+        run: |
+          PKG_VERSION="v$(node -p "require('./packages/cell-diagram-react/package.json').version")"
+          if [ "$PKG_VERSION" != "${GITHUB_REF_NAME}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match package version ${PKG_VERSION}"; exit 1
+          fi
+      - run: npm publish -w @kanushka/cell-diagram-react --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

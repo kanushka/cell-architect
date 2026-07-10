@@ -12,7 +12,7 @@
     ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
     "./style.css": "./dist/style.css"
   },
-  "files": ["dist"],
+  "files": ["dist", "LICENSE"],
   "publishConfig": { "access": "public" },
   "scripts": {
     "build": "vite build",

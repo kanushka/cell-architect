@@ -119,9 +119,10 @@ export function wso2ToDsl(model: Wso2CellModel, options: Wso2ConvertOptions = {}
         const parts = connection.id.split(":");
         const connProject = parts[1];
         const targetComponent = parts[2];
-        if (connProject === project) {
-          addEdge(component.id, targetComponent); // internal
+        if (connProject === project && componentIds.has(targetComponent)) {
+          addEdge(component.id, targetComponent); // internal, declared target
         } else {
+          // Same project but not a declared component, or a different project entirely: external.
           const id = registerExternal(connection.id, "east", connection.label, "api");
           addEdge(component.id, id);
         }

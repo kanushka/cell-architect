@@ -24,3 +24,7 @@ import "@kanushka/cell-diagram-react/style.css";
 ```
 
 `CellDiagram` fills its container — give the parent a height.
+
+## Limitations
+
+The WSO2 converter assumes component and service identifiers from the WSO2 cell-diagram model are valid Cell DSL identifiers. An identifier that exactly equals a DSL reserved keyword (`title`, `version`, `component`, `as`, `north`, `south`, `east`, `west`) will produce DSL output that fails to compile. Such inputs are out of scope for the converter.

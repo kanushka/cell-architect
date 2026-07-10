@@ -123,7 +123,7 @@ packages/cell-diagram-react   Publishable library (@kanushka/cell-diagram-react)
   src/parser                  Cell DSL parser
   src/compiler                Parser-to-diagram model validation
   src/renderer                React Flow layout and diagram rendering
-  src/converter                WSO2 cell-diagram converter
+  src/converter               WSO2 cell-diagram converter
   src/domain                  Shared cell diagram model types
   src/ui                      CellDiagram component
 

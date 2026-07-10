@@ -58,6 +58,17 @@ describe("wso2ToDsl — connections", () => {
     expect(compileProject(dsl).diagnostics).toEqual([]);
   });
 
+  it("same-project 4-part id whose target component is not declared becomes an east external and edge", () => {
+    const dsl = wso2ToDsl({
+      id: "A", name: "A",
+      components: [comp("Users", [{ id: "ABC:A:Ghost:basepath", label: "Ghost Service", onPlatform: true }])]
+    });
+    expect(dsl).not.toContain("Users -> Ghost");
+    expect(dsl).toMatch(/east \w+ as "Ghost Service"/);
+    expect(dsl).toMatch(/Users -> \w+/);
+    expect(compileProject(dsl).diagnostics).toEqual([]);
+  });
+
   it("different-project 4-part id becomes an east external and edge", () => {
     const dsl = wso2ToDsl({
       id: "A", name: "A",
@@ -97,8 +108,10 @@ describe("wso2ToDsl — connections", () => {
     });
     const southDeclCount = dsl.split("\n").filter((l) => l.startsWith("south ") && l.includes("MySQL DB")).length;
     expect(southDeclCount).toBe(1);
-    expect(dsl).toMatch(/Products -> \w+/);
-    expect(dsl).toMatch(/Invoices -> \w+/);
+    const productsMatch = dsl.match(/Products -> (\w+)/);
+    expect(productsMatch).not.toBeNull();
+    const resolvedId = productsMatch![1];
+    expect(dsl).toContain(`Invoices -> ${resolvedId}`);
     expect(compileProject(dsl).diagnostics).toEqual([]);
   });
 

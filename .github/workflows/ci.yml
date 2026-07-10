@@ -16,7 +16,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      # Build the library first so its dist/ type declarations exist before the
+      # playground typecheck resolves `@kanushka/cell-diagram-react` via node_modules.
+      - run: npm run build:lib
       - run: npm run typecheck -w @kanushka/cell-diagram-react
       - run: npm run typecheck -w @cell-architect/playground
       - run: npm test
-      - run: npm run build:lib

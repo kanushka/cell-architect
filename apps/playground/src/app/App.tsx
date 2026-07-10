@@ -1,7 +1,6 @@
 import { BookOpen } from "lucide-react";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { compileProject } from "../compiler/compileProject";
-import { DiagramCanvas } from "../renderer/DiagramCanvas";
+import { compileProject, DiagramCanvas } from "@kanushka/cell-diagram-react";
 import { clearShareUrl, decodeShareSource, readShareParam } from "../share/shareLink";
 import {
   createDocument,

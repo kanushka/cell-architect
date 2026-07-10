@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { Diagnostic } from "../domain/cellModel";
+import { Diagnostic } from "@kanushka/cell-diagram-react";
 import { EDITOR_DEFAULT_WIDTH } from "./layoutConstants";
 import { EditorPanel } from "./EditorPanel";
 

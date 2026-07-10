@@ -1,6 +1,6 @@
 import { useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { Diagnostic } from "../domain/cellModel";
-import { CodeHideIcon, CodeShowIcon } from "../ui/ControlIcons";
+import { Diagnostic } from "@kanushka/cell-diagram-react";
+import { CodeHideIcon, CodeShowIcon } from "./EditorIcons";
 import {
   clamp,
   EDITOR_DEFAULT_HEIGHT,

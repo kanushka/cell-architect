@@ -125,6 +125,42 @@ describe("wso2ToDsl — connections", () => {
   });
 });
 
+describe("wso2ToDsl — 3-part component references", () => {
+  it("treats a 3-part org:project:component id as an internal edge to a declared component", () => {
+    const dsl = wso2ToDsl({
+      id: "A",
+      name: "A",
+      components: [comp("Courses", [{ id: "ABC:A:Task", type: "http" }]), comp("Task", [])]
+    });
+    expect(dsl).toContain("Courses -> Task");
+    expect(dsl).not.toContain("south task");
+    expect(dsl).not.toContain("Courses -> task");
+    expect(compileProject(dsl).diagnostics).toEqual([]);
+  });
+
+  it("falls back to an east external when a 3-part id's component is not declared", () => {
+    const dsl = wso2ToDsl({
+      id: "A",
+      name: "A",
+      components: [comp("Courses", [{ id: "ABC:A:Ghost", label: "Ghost Svc", type: "http" }])]
+    });
+    expect(dsl).toMatch(/^east \w+ as "Ghost Svc" api$/m);
+    expect(dsl).toMatch(/Courses -> \w+/);
+    expect(dsl).not.toMatch(/Courses -> Ghost\b/);
+    expect(compileProject(dsl).diagnostics).toEqual([]);
+  });
+
+  it("still routes a 3-part id from a different project to an east external", () => {
+    const dsl = wso2ToDsl({
+      id: "A",
+      name: "A",
+      components: [comp("Courses", [{ id: "ABC:B:Task", label: "Org Task", type: "http" }])]
+    });
+    expect(dsl).toMatch(/^east \w+ as "Org Task" api$/m);
+    expect(compileProject(dsl).diagnostics).toEqual([]);
+  });
+});
+
 describe("wso2ToDsl — reference model", () => {
   it("produces valid DSL that compiles without diagnostics", () => {
     const dsl = wso2ToDsl(REFERENCE_MODEL);

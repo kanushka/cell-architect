@@ -17,7 +17,11 @@ function isExposed(component: Wso2Component, gateway: "internet" | "intranet"): 
   );
 }
 
-const COMPONENT_REF = /^[^:\s]+:[^:\s]+:[^:\s]+:[^:\s]+$/;
+// A platform component reference is `org:project:component` with an optional
+// `:resource` suffix — i.e. 3 or 4 colon-separated segments. `[1]` is the
+// project and `[2]` is the component. URIs (`scheme://host`) have only 2
+// segments and are excluded, so they fall through to the south/external branch.
+const COMPONENT_REF = /^[^:\s]+:[^:\s]+:[^:\s]+(:[^:\s]+)?$/;
 const SIMPLE_ID = /^[A-Za-z0-9_-]+$/;
 
 function slug(text: string): string {

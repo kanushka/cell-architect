@@ -200,21 +200,21 @@ Completed:
 - Click-to-focus connection view.
 - Fullscreen diagram mode.
 - README and DSL guide.
+- Export as SVG or PNG.
+- Multi-cell diagram support, with cross-cell links and shared externals.
 
 Next useful improvements:
 
-- Add export as SVG or PNG.
 - Add copy/share of DSL text.
 - Improve mobile layout for dense diagrams.
 - Add optional sample templates.
 - Add pan/zoom reset or fit controls with clearer icons.
 - Add a richer validation panel with clickable line diagnostics.
-- Add multi-cell diagram support when the single-cell notation stabilizes.
 
 ## Open Design Questions
 
-- Should multi-cell diagrams use explicit `cell <name> { ... }` blocks, while single-cell diagrams continue to omit the outer block?
-- Should external systems be reusable named entities across multiple cells?
+- Resolved: multi-cell diagrams use explicit `cell <id> [as "<label>"] { ... }` blocks; a document with no blocks remains a single implicit cell, fully backward compatible.
+- Resolved: external systems used on a boundary by two or more cells are automatically treated as one shared, reusable entity.
 - Should gateway exposure edges allow labels, for example `north -> API : public REST`?
-- Should the app support exporting diagrams as standalone SVG for documentation?
+- Resolved: the app supports exporting diagrams as SVG and PNG.
 - Should local storage later be replaced or supplemented by file-backed project storage?

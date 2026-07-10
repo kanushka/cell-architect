@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      # Build the library first so its dist/ type declarations exist before the
+      # playground typecheck resolves `@kanushka/cell-diagram-react` via node_modules.
+      - run: npm run build:lib
+      - run: npm run typecheck -w @kanushka/cell-diagram-react
+      - run: npm run typecheck -w @cell-architect/playground
+      - run: npm test

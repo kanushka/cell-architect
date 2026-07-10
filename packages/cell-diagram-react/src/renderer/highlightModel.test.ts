@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { compileProject } from "../compiler/compileProject";
-import { defaultSampleSource } from "../storage/defaultSample";
+import { defaultSampleSource } from "../test/defaultSample";
 import { toReactFlow } from "./flowLayout";
 import { connectionIdsForNode, highlightedNodeIdsForConnections } from "./highlightModel";
 

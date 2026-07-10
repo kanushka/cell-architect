@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { compileCellSource } from "../compiler/compileCellSource";
-import { defaultSampleSource } from "../storage/defaultSample";
+import { defaultSampleSource } from "../test/defaultSample";
 import { parseCellDsl } from "./parseCellDsl";
 
 const orderSystemSource = `title OrderCell

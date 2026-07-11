@@ -1,6 +1,6 @@
 {
   "name": "@kanushka/cell-diagram-react",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "React component and DSL for rendering cell architecture diagrams",
   "license": "MIT",
   "repository": {

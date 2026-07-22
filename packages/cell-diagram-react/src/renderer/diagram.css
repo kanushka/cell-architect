@@ -6,6 +6,12 @@
   --south: #059669;
   --west: #7c3aed;
   --panel-edge-offset: 14px;
+  --diagram-layout-duration: 300ms;
+  --diagram-node-enter-duration: 360ms;
+  --diagram-edge-enter-duration: 220ms;
+  --diagram-edge-enter-delay: 80ms;
+  --diagram-layout-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --diagram-arrive-ease: cubic-bezier(0.16, 1.28, 0.3, 1);
 }
 
 .zoom-controls {
@@ -53,6 +59,16 @@
   border: 0;
   overflow: visible;
   pointer-events: none;
+}
+
+.diagram-node--position-animated {
+  transition: transform var(--diagram-layout-duration) var(--diagram-layout-ease);
+}
+
+.diagram-node--position-animated .cell-boundary {
+  transition:
+    width var(--diagram-layout-duration) var(--diagram-layout-ease),
+    height var(--diagram-layout-duration) var(--diagram-layout-ease);
 }
 
 .cell-boundary__outline {
@@ -237,6 +253,30 @@
   border-color: var(--west);
 }
 
+.diagram-node--entering .component-node,
+.diagram-node--entering .external-node,
+.diagram-node--entering .gateway-node {
+  transform-origin: center;
+  animation: diagram-node-arrive var(--diagram-node-enter-duration) var(--diagram-arrive-ease) backwards;
+}
+
+@keyframes diagram-node-arrive {
+  0% {
+    opacity: 0;
+    transform: scale(0.68);
+  }
+
+  68% {
+    opacity: 1;
+    transform: scale(1.045);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .react-flow__handle {
   width: 7px;
   height: 7px;
@@ -260,6 +300,38 @@
   stroke: #475569;
   stroke-width: 2;
   transition: stroke-width 140ms ease, opacity 140ms ease, filter 140ms ease;
+}
+
+.diagram-edge--entering .react-flow__edge-path {
+  animation: diagram-edge-arrive var(--diagram-edge-enter-duration) ease-out var(--diagram-edge-enter-delay) backwards;
+}
+
+.edge-label--entering {
+  animation: diagram-edge-label-arrive 150ms ease-out 160ms backwards;
+}
+
+@keyframes diagram-edge-arrive {
+  0% {
+    opacity: 0;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes diagram-edge-label-arrive {
+  from {
+    opacity: 0;
+  }
 }
 
 .edge-north .react-flow__edge-path {
@@ -355,5 +427,20 @@
     bottom: 54px;
     transform: none;
     text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diagram-node--position-animated,
+  .diagram-node--position-animated .cell-boundary {
+    transition: none;
+  }
+
+  .diagram-node--entering .component-node,
+  .diagram-node--entering .external-node,
+  .diagram-node--entering .gateway-node,
+  .diagram-edge--entering .react-flow__edge-path,
+  .edge-label--entering {
+    animation: none;
   }
 }

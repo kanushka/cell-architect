@@ -254,6 +254,18 @@ function namespaced(cellId: string, id: string, multi: boolean) {
   return multi ? `${cellId}::${id}` : id;
 }
 
+function motionKeyForLine(cellId: string, kind: "component" | "external", line: number | undefined, id: string) {
+  return typeof line === "number" ? `${cellId}:${kind}:${line}` : `${cellId}:${kind}:id:${id}`;
+}
+
+function componentSourceLine(cell: CellModel, componentId: string, declaredLine: number | undefined) {
+  if (typeof declaredLine === "number") {
+    return declaredLine;
+  }
+
+  return cell.edges.find((edge) => edge.source === componentId || edge.target === componentId)?.line;
+}
+
 function gatewayNodeId(cellId: string, direction: string, multi: boolean) {
   return multi ? `gateway-${cellId}-${direction}` : `gateway-${direction}`;
 }
@@ -618,11 +630,17 @@ export function toReactFlow(project: ProjectModel) {
 
     layout.nodes.forEach(({ component, x, y }) => {
       const id = namespaced(cell.id, component.id, multi);
+      const sourceLine = componentSourceLine(cell, component.id, component.line);
       nodes.push({
         id,
         type: "component",
         position: { x: originX + x, y: originY + y },
-        data: { nodeId: id, label: component.label ?? component.id, componentType: component.type },
+        data: {
+          nodeId: id,
+          label: component.label ?? component.id,
+          componentType: component.type,
+          motionKey: motionKeyForLine(cell.id, "component", sourceLine, component.id)
+        },
         draggable: false
       });
     });
@@ -663,7 +681,8 @@ export function toReactFlow(project: ProjectModel) {
           nodeId: id,
           label: external.label ?? external.id,
           externalType: external.type,
-          direction: external.direction
+          direction: external.direction,
+          motionKey: motionKeyForLine(cell.id, "external", external.line, external.id)
         },
         draggable: false
       });
@@ -685,7 +704,8 @@ export function toReactFlow(project: ProjectModel) {
         nodeId: `external-${ext.id}`,
         label: ext.label ?? ext.id,
         externalType: ext.type,
-        direction: ext.direction ?? "east"
+        direction: ext.direction ?? "east",
+        motionKey: motionKeyForLine("shared", "external", ext.line, ext.id)
       },
       draggable: false
     });

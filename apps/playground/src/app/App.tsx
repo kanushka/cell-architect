@@ -23,6 +23,9 @@ import { ShareButton } from "./ShareButton";
 import { ShareImportDialog } from "./ShareImportDialog";
 import "@kanushka/cell-diagram-react/style.css";
 import "./styles.css";
+import { useDebouncedValue } from "./useDebouncedValue";
+
+const DIAGRAM_MODEL_DEBOUNCE_MS = 120;
 
 function downloadText(filename: string, content: string) {
   const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
@@ -114,6 +117,7 @@ export function App() {
     lastValidModel.current = compiled.model;
   }
   const visibleModel = compiled.model ?? lastValidModel.current;
+  const diagramModel = useDebouncedValue(visibleModel, DIAGRAM_MODEL_DEBOUNCE_MS, activeDocument.id);
   const isAtDocumentLimit = repository.documents.length >= MAX_DOCUMENTS;
   const insets = computeCanvasInsets({
     editorOpen,
@@ -227,7 +231,12 @@ export function App() {
       data-layout-mode={isTabbedWorkbench ? "mobile" : "desktop"}
       data-mobile-tab={activeMobileTab}
     >
-      <DiagramCanvas model={visibleModel} insets={insets} fitKey={canvasFitKey} />
+      <DiagramCanvas
+        model={diagramModel}
+        insets={insets}
+        fitKey={canvasFitKey}
+        motionContextKey={activeDocument.id}
+      />
 
       <div className="mobile-tab-bar" role="tablist" aria-label="Mobile workbench views">
         <button

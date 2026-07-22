@@ -2,6 +2,7 @@ export { compileProject } from "./compiler/compileProject";
 export { compileCellSource } from "./compiler/compileCellSource";
 export { parseProject } from "./parser/parseProject";
 export { DiagramCanvas } from "./renderer/DiagramCanvas";
+export { parsePortableSource, serializePortableSource } from "./renderer/customLayout";
 export { CellDiagram } from "./renderer/CellDiagram";
 export { wso2ToDsl } from "./converter/wso2ToDsl";
 
@@ -18,6 +19,8 @@ export type {
   BoundaryDirection
 } from "./domain/cellModel";
 export type { CellDiagramProps } from "./renderer/CellDiagram";
+export type { CanvasMessage, DiagramCanvasProps } from "./renderer/DiagramCanvas";
+export type { CustomLayout, CustomNodePosition, PortableCellSource } from "./renderer/customLayout";
 export type {
   Wso2CellModel,
   Wso2Component,

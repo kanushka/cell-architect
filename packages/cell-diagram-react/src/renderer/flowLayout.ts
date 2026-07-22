@@ -491,9 +491,11 @@ function emitDecoupledCrossEdges(
         nodeId: stubOutId,
         label: `${edge.targetCell}.${edge.targetComp}`,
         externalType: undefined,
-        direction: edge.exit
+        direction: edge.exit,
+        layoutKind: "external",
+        cellId: edge.sourceCell
       },
-      draggable: false
+      draggable: true
     });
     nodes.push({
       id: stubInId,
@@ -503,9 +505,11 @@ function emitDecoupledCrossEdges(
         nodeId: stubInId,
         label: `${edge.sourceCell}.${edge.sourceComp}`,
         externalType: undefined,
-        direction: edge.entry
+        direction: edge.entry,
+        layoutKind: "external",
+        cellId: edge.targetCell
       },
-      draggable: false
+      draggable: true
     });
 
     const outData = connectionData(`${edge.id}-out`, [srcComp, srcGate, stubOutId]);
@@ -622,7 +626,9 @@ export function toReactFlow(project: ProjectModel) {
         title: cell.label ?? (multi ? cell.id : project.title),
         version: cell.version,
         width: layout.width,
-        height: layout.height
+        height: layout.height,
+        layoutKind: "cell",
+        cellId: cell.id
       },
       draggable: false,
       selectable: false
@@ -639,9 +645,11 @@ export function toReactFlow(project: ProjectModel) {
           nodeId: id,
           label: component.label ?? component.id,
           componentType: component.type,
-          motionKey: motionKeyForLine(cell.id, "component", sourceLine, component.id)
+          motionKey: motionKeyForLine(cell.id, "component", sourceLine, component.id),
+          layoutKind: "component",
+          cellId: cell.id
         },
-        draggable: false
+        draggable: true
       });
     });
 
@@ -658,7 +666,7 @@ export function toReactFlow(project: ProjectModel) {
         id,
         type: "gateway",
         position: { x: originX + position.x, y: originY + position.y },
-        data: { nodeId: id, direction },
+        data: { nodeId: id, direction, layoutKind: "gateway", cellId: cell.id },
         draggable: false
       });
     });
@@ -682,9 +690,11 @@ export function toReactFlow(project: ProjectModel) {
           label: external.label ?? external.id,
           externalType: external.type,
           direction: external.direction,
-          motionKey: motionKeyForLine(cell.id, "external", external.line, external.id)
+          motionKey: motionKeyForLine(cell.id, "external", external.line, external.id),
+          layoutKind: "external",
+          cellId: cell.id
         },
-        draggable: false
+        draggable: true
       });
     });
 
@@ -705,9 +715,10 @@ export function toReactFlow(project: ProjectModel) {
         label: ext.label ?? ext.id,
         externalType: ext.type,
         direction: ext.direction ?? "east",
-        motionKey: motionKeyForLine("shared", "external", ext.line, ext.id)
+        motionKey: motionKeyForLine("shared", "external", ext.line, ext.id),
+        layoutKind: "shared-external"
       },
-      draggable: false
+      draggable: true
     });
   });
 

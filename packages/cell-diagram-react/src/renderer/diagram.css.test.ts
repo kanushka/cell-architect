@@ -34,6 +34,14 @@ describe("diagram interaction styles", () => {
     expect(styles).toContain("--diagram-edge-enter-delay: 80ms;");
   });
 
+  it("visually distinguishes temporary layout state and disabled auto arrange", () => {
+    expect(ruleFor(".canvas-notification")).toContain("position: absolute;");
+    expect(ruleFor(".canvas-notification")).toContain("pointer-events: none;");
+    expect(ruleFor('.canvas-notification[data-tone="warning"]')).toContain("#facc15");
+    expect(ruleFor('.canvas-notification[data-mode="message"]')).toContain("canvas-notification-pop");
+    expect(ruleFor(".zoom-controls__auto:disabled")).toContain("cursor: not-allowed;");
+  });
+
   it("turns diagram construction motion off for reduced-motion users", () => {
     const reducedMotionRule = styles.match(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n\}/)?.[0] ?? "";
 

@@ -25,7 +25,7 @@ export type {
 } from "./domain/cellModel";
 export type { CellDiagramProps } from "./renderer/CellDiagram";
 export type { MixedDslConversion } from "./parser/planMixedDslConversion";
-export type { CanvasMessage, DiagramCanvasProps } from "./renderer/DiagramCanvas";
+export type { CanvasMessage, DiagramCanvasProps, DiagramTheme } from "./renderer/DiagramCanvas";
 export type { CustomLayout, CustomNodePosition, PortableCellSource } from "./renderer/customLayout";
 export type {
   Wso2CellModel,

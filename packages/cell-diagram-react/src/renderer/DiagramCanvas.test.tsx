@@ -283,3 +283,31 @@ describe("DiagramCanvas zoom controls", () => {
     expect(container.querySelectorAll(".canvas-notification")).toHaveLength(1);
   });
 });
+
+describe("DiagramCanvas theming", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("defaults to the light theme when no theme is supplied", () => {
+    const model = buildModel("component API service\nnorth -> API");
+    const { container } = render(<DiagramCanvas model={model} />);
+
+    expect(container.querySelector(".cell-diagram-root")).toHaveAttribute("data-cd-theme", "light");
+  });
+
+  it("stamps the dark theme onto the diagram root", () => {
+    const model = buildModel("component API service\nnorth -> API");
+    const { container } = render(<DiagramCanvas model={model} theme="dark" />);
+
+    expect(container.querySelector(".cell-diagram-root")).toHaveAttribute("data-cd-theme", "dark");
+  });
+
+  it("themes the empty-state placeholder too", () => {
+    const { container } = render(<DiagramCanvas model={null} theme="dark" />);
+
+    const root = container.querySelector(".cell-diagram-root");
+    expect(root).toHaveClass("empty-canvas");
+    expect(root).toHaveAttribute("data-cd-theme", "dark");
+  });
+});

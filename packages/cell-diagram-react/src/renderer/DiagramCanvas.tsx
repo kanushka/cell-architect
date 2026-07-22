@@ -367,6 +367,9 @@ function ZoomControls({
 //   );
 // }
 
+/** Color theme applied to the rendered diagram. */
+export type DiagramTheme = "light" | "dark";
+
 export interface DiagramCanvasProps {
   model: ProjectModel | null;
   insets?: DiagramCanvasInsets;
@@ -377,6 +380,8 @@ export interface DiagramCanvasProps {
   onCustomLayoutChange?: (layout: CustomLayout) => void;
   onAutoArrange?: () => void;
   canvasMessage?: CanvasMessage | null;
+  /** Light or dark color theme. Defaults to `"light"`. */
+  theme?: DiagramTheme;
 }
 
 export interface CanvasMessage {
@@ -394,7 +399,8 @@ export function DiagramCanvas({
   customLayout = null,
   onCustomLayoutChange,
   onAutoArrange = () => undefined,
-  canvasMessage = null
+  canvasMessage = null,
+  theme = "light"
 }: DiagramCanvasProps) {
   const [activeConnectionIds, setActiveConnectionIds] = useState<string[]>([]);
   const [, setMotionVersion] = useState(0);
@@ -520,14 +526,15 @@ export function DiagramCanvas({
 
   if (!model) {
     return (
-      <div className="empty-canvas">
+      <div className="cell-diagram-root empty-canvas" data-cd-theme={theme}>
         <span>Fix the DSL errors to render the diagram.</span>
       </div>
     );
   }
 
   return (
-    <ReactFlowProvider key={motionContextKey}>
+    <div className="cell-diagram-root" data-cd-theme={theme}>
+      <ReactFlowProvider key={motionContextKey}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -545,7 +552,7 @@ export function DiagramCanvas({
         onPaneClick={() => setActiveConnections([])}
       >
         <FitViewController insets={insets} model={model} fitKey={fitKey} />
-        <Background color="#cbd5e1" gap={22} />
+        <Background color={theme === "dark" ? "#334155" : "#cbd5e1"} gap={22} />
         <ZoomControls
           insets={insets}
           customLayoutActive={Boolean(customLayout)}
@@ -567,6 +574,7 @@ export function DiagramCanvas({
               : "Click a component to focus its connections.")}
         </div>
       </ReactFlow>
-    </ReactFlowProvider>
+      </ReactFlowProvider>
+    </div>
   );
 }

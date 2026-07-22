@@ -289,7 +289,7 @@ describe("toReactFlow", () => {
     expect(internalEdge?.type).toBe("floating");
     // A React Flow arrow marker (orient="auto") is used so it aligns to the path tangent.
     expect(internalEdge?.markerEnd).toEqual(
-      expect.objectContaining({ type: "arrow", color: "#475569" })
+      expect.objectContaining({ type: "arrow", color: "var(--cd-edge)" })
     );
   });
 
@@ -327,7 +327,7 @@ describe("toReactFlow", () => {
     // The terminal segment landing on the external carries the colored arrow marker.
     expect(gatewayExternal?.type).toBe("smoothstep");
     expect(gatewayExternal?.markerEnd).toEqual(
-      expect.objectContaining({ type: "arrow", color: "#ea580c" })
+      expect.objectContaining({ type: "arrow", color: "var(--cd-east)" })
     );
   });
 

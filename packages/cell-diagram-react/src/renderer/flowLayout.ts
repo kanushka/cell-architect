@@ -221,15 +221,17 @@ function connectionData(connectionId: string, connectedNodeIds: string[]) {
   };
 }
 
-// Arrow-head colors mirror the per-direction edge stroke colors in diagram.css.
+// Arrow-head colors reference the same theme tokens as the edge strokes in
+// diagram.css. The markers render inside `.cell-diagram-root`, so these CSS
+// variables resolve to the active (light/dark) theme automatically.
 const EDGE_ARROW_COLORS: Record<string, string> = {
-  north: "#0284c7",
-  east: "#ea580c",
-  south: "#059669",
-  west: "#7c3aed"
+  north: "var(--cd-north)",
+  east: "var(--cd-east)",
+  south: "var(--cd-south)",
+  west: "var(--cd-west)"
 };
-const DEFAULT_ARROW_COLOR = "#475569";
-const CROSS_ARROW_COLOR = "#7c3aed";
+const DEFAULT_ARROW_COLOR = "var(--cd-edge)";
+const CROSS_ARROW_COLOR = "var(--cd-cross)";
 
 // A React Flow arrow marker (orient="auto" so it aligns to the path tangent),
 // colored to match the edge. Used on the terminal segment of each logical edge.

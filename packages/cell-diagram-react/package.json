@@ -1,6 +1,6 @@
 {
   "name": "@kanushka/cell-diagram-react",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "React component and DSL for rendering cell architecture diagrams",
   "license": "MIT",
   "repository": {
@@ -9,18 +9,30 @@
     "directory": "packages/cell-diagram-react"
   },
   "homepage": "https://github.com/kanushka/cell-architect#readme",
-  "bugs": { "url": "https://github.com/kanushka/cell-architect/issues" },
+  "bugs": {
+    "url": "https://github.com/kanushka/cell-architect/issues"
+  },
   "type": "module",
-  "sideEffects": ["*.css"],
+  "sideEffects": [
+    "*.css"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
     "./style.css": "./dist/style.css"
   },
-  "files": ["dist", "LICENSE"],
-  "publishConfig": { "access": "public" },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "vite build",
     "typecheck": "tsc --noEmit",

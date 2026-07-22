@@ -25,6 +25,14 @@ describe("diagram interaction styles", () => {
     expect(externalRule).toContain("font-size: 10px;");
     expect(externalRule).not.toContain("text-transform:");
   });
+
+  it("visually distinguishes temporary layout state and disabled auto arrange", () => {
+    expect(ruleFor(".canvas-notification")).toContain("position: absolute;");
+    expect(ruleFor(".canvas-notification")).toContain("pointer-events: none;");
+    expect(ruleFor('.canvas-notification[data-tone="warning"]')).toContain("#facc15");
+    expect(ruleFor('.canvas-notification[data-mode="message"]')).toContain("canvas-notification-pop");
+    expect(ruleFor(".zoom-controls__auto:disabled")).toContain("cursor: not-allowed;");
+  });
 });
 
 describe("canvas-first shell", () => {

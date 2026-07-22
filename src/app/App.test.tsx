@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { serializePortableSource } from "../renderer/customLayout";
+import { encodeShareSource } from "../share/shareLink";
 import { App } from "./App";
 
 function mockMobileLayout(matches: boolean) {
@@ -34,6 +36,7 @@ function setViewportWidth(width: number) {
 describe("App", () => {
   beforeEach(() => {
     localStorage.clear();
+    history.replaceState(null, "", location.pathname + location.search);
     vi.restoreAllMocks();
     mockMobileLayout(false);
     setViewportWidth(1440);
@@ -162,6 +165,34 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Share" }));
 
     expect(screen.getByRole("dialog", { name: "Share diagram" })).toBeInTheDocument();
+  });
+
+  it("restores a shared manual layout and resets it on the first DSL edit", async () => {
+    const source = "title Shared\ncomponent API service";
+    const portable = serializePortableSource(source, {
+      version: 1,
+      sourceFingerprint: "replaced-by-serializer",
+      nodes: { API: { kind: "component", cellId: "main", x: 220, y: 220 } }
+    });
+    location.hash = `#s=${encodeShareSource(portable)}`;
+
+    render(<App />);
+
+    const autoArrange = await screen.findByRole("button", { name: "Auto arrange components" });
+    await waitFor(() => expect(autoArrange).toBeEnabled());
+    expect(screen.getByLabelText("Cell DSL source")).toHaveValue(source);
+
+    fireEvent.focus(screen.getByLabelText("Cell DSL source"));
+    expect(screen.getByText(/Manual arrangement is temporary/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Cell DSL source"), {
+      target: { value: `${source}\ncomponent Worker` }
+    });
+
+    await waitFor(() => expect(autoArrange).toBeDisabled());
+    expect(screen.getByText("Manual layout reset after DSL change.")).toBeInTheDocument();
+    expect(screen.queryByText(/Manual arrangement is temporary/)).not.toBeInTheDocument();
+    expect(document.querySelectorAll(".canvas-notification")).toHaveLength(1);
   });
 
   it("shows the help popover with the repo link", async () => {

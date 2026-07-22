@@ -14,6 +14,8 @@ Cell Architect is a browser-based workbench for drawing cell architecture diagra
 - Internal, inbound, outbound, and gateway exposure dependencies
 - Gateway circles on active cell boundaries
 - Click a component to focus its connected links
+- Temporary drag-to-arrange with Auto arrange reset
+- Portable manual positions in exported `.cell` files and share links
 
 ## Getting Started
 

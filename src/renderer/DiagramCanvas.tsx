@@ -7,9 +7,11 @@ import {
   ReactFlowProvider,
   useReactFlow,
   useViewport,
+  applyNodeChanges,
   type Edge,
   type EdgeProps,
   type Node,
+  type NodeChange,
   type NodeProps,
   getBezierPath,
   getSmoothStepPath
@@ -19,6 +21,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { ProjectModel } from "../domain/cellModel";
 import { FitScreenIcon, ZoomInIcon, ZoomOutIcon } from "../ui/ControlIcons";
 import { exportPng, exportSvg } from "./exportImage";
+import { applyCustomLayout, captureCustomPosition, type CustomLayout } from "./customLayout";
 import { toReactFlow } from "./flowLayout";
 import { connectionIdsForNode, edgeConnectionId, highlightedNodeIdsForConnections } from "./highlightModel";
 
@@ -203,7 +206,15 @@ function FitViewController({
   return null;
 }
 
-function ZoomControls({ insets }: { insets: DiagramCanvasInsets }) {
+function ZoomControls({
+  insets,
+  customLayoutActive,
+  onAutoArrange
+}: {
+  insets: DiagramCanvasInsets;
+  customLayoutActive: boolean;
+  onAutoArrange: () => void;
+}) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const { zoom } = useViewport();
 
@@ -223,6 +234,15 @@ function ZoomControls({ insets }: { insets: DiagramCanvasInsets }) {
         onClick={() => fitView({ padding: buildFitPadding(insets), duration: 200 })}
       >
         <FitScreenIcon size={16} />
+      </button>
+      <button
+        type="button"
+        className="zoom-controls__auto"
+        aria-label="Auto arrange components"
+        disabled={!customLayoutActive}
+        onClick={onAutoArrange}
+      >
+        Auto arrange
       </button>
     </div>
   );
@@ -255,14 +275,40 @@ interface DiagramCanvasProps {
   model: ProjectModel | null;
   insets?: DiagramCanvasInsets;
   fitKey?: string;
+  source?: string;
+  customLayout?: CustomLayout | null;
+  onCustomLayoutChange?: (layout: CustomLayout) => void;
+  onAutoArrange?: () => void;
+  canvasMessage?: CanvasMessage | null;
 }
 
-export function DiagramCanvas({ model, insets = DEFAULT_INSETS, fitKey }: DiagramCanvasProps) {
+export interface CanvasMessage {
+  id: number;
+  tone: "warning" | "info";
+  text: string;
+}
+
+export function DiagramCanvas({
+  model,
+  insets = DEFAULT_INSETS,
+  fitKey,
+  source = "",
+  customLayout = null,
+  onCustomLayoutChange,
+  onAutoArrange = () => undefined,
+  canvasMessage = null
+}: DiagramCanvasProps) {
   const [activeConnectionIds, setActiveConnectionIds] = useState<string[]>([]);
   const flow = useMemo<ReturnType<typeof toReactFlow>>(
     () => (model ? toReactFlow(model) : { nodes: [], edges: [], cellSize: { width: 0, height: 0 } }),
     [model]
   );
+  const positionedNodes = useMemo(() => applyCustomLayout(flow.nodes, customLayout), [customLayout, flow.nodes]);
+  const [liveNodes, setLiveNodes] = useState<Node[]>(positionedNodes);
+
+  useEffect(() => {
+    setLiveNodes(positionedNodes);
+  }, [positionedNodes]);
   const activeConnectionIdSet = useMemo(() => new Set(activeConnectionIds), [activeConnectionIds]);
   const highlightedNodeIds = useMemo(() => {
     if (activeConnectionIdSet.size === 0) {
@@ -281,7 +327,7 @@ export function DiagramCanvas({ model, insets = DEFAULT_INSETS, fitKey }: Diagra
   const isFocusView = activeConnectionIdSet.size > 0;
   const nodes = useMemo<Node[]>(
     () =>
-      flow.nodes.map((node) => ({
+      liveNodes.map((node) => ({
         ...node,
         className: isFocusView
           ? highlightedNodeIds.has(node.id)
@@ -289,7 +335,7 @@ export function DiagramCanvas({ model, insets = DEFAULT_INSETS, fitKey }: Diagra
             : "connection-dimmed-node"
           : node.className
       })),
-    [flow.nodes, highlightedNodeIds, isFocusView]
+    [highlightedNodeIds, isFocusView, liveNodes]
   );
   const edges = useMemo<Edge[]>(
     () =>
@@ -320,6 +366,22 @@ export function DiagramCanvas({ model, insets = DEFAULT_INSETS, fitKey }: Diagra
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [setActiveConnections]);
 
+  const handleNodesChange = useCallback((changes: NodeChange[]) => {
+    setLiveNodes((current) => applyNodeChanges(changes, current));
+  }, []);
+
+  const handleNodeDragStop = useCallback(
+    (_event: MouseEvent | TouchEvent, node: Node) => {
+      const nextLayout = captureCustomPosition(customLayout, source, node, flow.nodes);
+      if (!nextLayout) {
+        return;
+      }
+      setLiveNodes(applyCustomLayout(flow.nodes, nextLayout));
+      onCustomLayoutChange?.(nextLayout);
+    },
+    [customLayout, flow.nodes, onCustomLayoutChange, source]
+  );
+
   if (!model) {
     return (
       <div className="empty-canvas">
@@ -337,21 +399,35 @@ export function DiagramCanvas({ model, insets = DEFAULT_INSETS, fitKey }: Diagra
         edgeTypes={edgeTypes}
         minZoom={0.25}
         maxZoom={1.35}
-        nodesDraggable={false}
+        nodesDraggable
         nodesConnectable={false}
         elementsSelectable
         proOptions={{ hideAttribution: true }}
+        onNodesChange={handleNodesChange}
+        onNodeDragStop={handleNodeDragStop}
         onNodeClick={(_, node) => setActiveConnections(getConnectionIdsForNode(node.id))}
         onPaneClick={() => setActiveConnections([])}
       >
         <FitViewController insets={insets} model={model} fitKey={fitKey} />
         <Background color="#cbd5e1" gap={22} />
-        <ZoomControls insets={insets} />
+        <ZoomControls
+          insets={insets}
+          customLayoutActive={Boolean(customLayout)}
+          onAutoArrange={onAutoArrange}
+        />
         <ExportControls filename={model.title?.trim() || "cell-diagram"} />
-        <div className="focus-hint" data-focus-mode={isFocusView ? "active" : "idle"}>
-          {isFocusView
-            ? "Focus view: click outside or press Esc to return to the full diagram."
-            : "Click a component to focus its connections."}
+        <div
+          key={canvasMessage?.id ?? "focus-hint"}
+          className="canvas-notification"
+          data-mode={canvasMessage ? "message" : "hint"}
+          data-tone={canvasMessage?.tone ?? "neutral"}
+          data-focus-mode={isFocusView ? "active" : "idle"}
+          role={canvasMessage ? "status" : undefined}
+        >
+          {canvasMessage?.text ??
+            (isFocusView
+              ? "Focus view: click outside or press Esc to return to the full diagram."
+              : "Click a component to focus its connections.")}
         </div>
       </ReactFlow>
     </ReactFlowProvider>

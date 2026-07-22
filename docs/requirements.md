@@ -135,6 +135,19 @@ Focus behavior:
 - Clicking the canvas or pressing `Esc` should clear focus view.
 - The canvas should show a short hint for focus behavior.
 
+Manual arrangement:
+
+- Users may drag internal components only within their owning cell.
+- Cell-local external components may move only along their DSL-declared side.
+- Shared externals must remain outside cell interiors.
+- Cell boundaries and gateways must not be draggable.
+- Any DSL edit must discard the complete manual arrangement and rerun Dagre.
+- An Auto arrange control must explicitly discard manual positions and rerun Dagre.
+- While manual layout is active, the UI must warn that DSL edits will reset it.
+- Exported `.cell` content and share links may preserve a manual arrangement in
+  one hidden, compressed `# @layout=` comment line.
+- Manual positions must not be stored in the visible DSL or browser document repository.
+
 ## App UI Requirements
 
 Layout:

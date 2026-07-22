@@ -603,4 +603,32 @@ cell products {
     const lastSegment = flow.edges.find((e) => e.id === "x2-gateway-component");
     expect(lastSegment?.targetHandle).toBe("component-top-target");
   });
+
+  it("marks only manually arrangeable node kinds as draggable", () => {
+    const project = compileProject(`
+cell orders {
+  component api
+  api -> east stripe
+  api -> products.api
+}
+cell products {
+  component api
+}
+`).model;
+    expect(project).not.toBeNull();
+
+    const flow = toReactFlow(project!);
+    const component = flow.nodes.find((node) => node.id === "orders::api");
+    const external = flow.nodes.find((node) => node.id === "external-orders-stripe");
+    const cell = flow.nodes.find((node) => node.id === "cell-orders");
+    const gateway = flow.nodes.find((node) => node.id === "gateway-orders-east");
+
+    expect(component).toMatchObject({ draggable: true, data: { layoutKind: "component", cellId: "orders" } });
+    expect(external).toMatchObject({
+      draggable: true,
+      data: { layoutKind: "external", cellId: "orders", direction: "east" }
+    });
+    expect(cell).toMatchObject({ draggable: false, data: { layoutKind: "cell", cellId: "orders" } });
+    expect(gateway).toMatchObject({ draggable: false, data: { layoutKind: "gateway", cellId: "orders" } });
+  });
 });

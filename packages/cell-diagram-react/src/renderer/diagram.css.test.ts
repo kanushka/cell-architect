@@ -26,4 +26,20 @@ describe("diagram interaction styles", () => {
     expect(externalRule).toContain("font-size: 10px;");
     expect(externalRule).not.toContain("text-transform:");
   });
+
+  it("defines a coherent live-edit motion sequence", () => {
+    expect(ruleFor(".diagram-node--position-animated")).toContain("transition: transform");
+    expect(styles).toContain("@keyframes diagram-node-arrive");
+    expect(styles).toContain("@keyframes diagram-edge-arrive");
+    expect(styles).toContain("--diagram-edge-enter-delay: 80ms;");
+  });
+
+  it("turns diagram construction motion off for reduced-motion users", () => {
+    const reducedMotionRule = styles.match(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n\}/)?.[0] ?? "";
+
+    expect(reducedMotionRule).toContain(".diagram-node--position-animated");
+    expect(reducedMotionRule).toContain("transition: none;");
+    expect(reducedMotionRule).toContain(".diagram-edge--entering .react-flow__edge-path");
+    expect(reducedMotionRule).toContain("animation: none;");
+  });
 });

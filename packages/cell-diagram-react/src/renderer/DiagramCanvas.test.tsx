@@ -143,6 +143,60 @@ describe("DiagramCanvas component styling", () => {
   });
 });
 
+describe("DiagramCanvas live-edit motion", () => {
+  it("keeps the initial graph still, then animates only a newly added circle", () => {
+    const initialModel = buildModel("component API service");
+    const { rerender } = render(<DiagramCanvas model={initialModel} motionContextKey="doc-1" />);
+
+    expect(screen.getByText("API").closest(".react-flow__node")).not.toHaveClass("diagram-node--entering");
+
+    const nextModel = buildModel("component API service\ncomponent Worker service");
+    rerender(<DiagramCanvas model={nextModel} motionContextKey="doc-1" />);
+
+    expect(screen.getByText("Worker").closest(".react-flow__node")).toHaveClass("diagram-node--entering");
+    expect(screen.getByText("API").closest(".react-flow__node")).toHaveClass(
+      "diagram-node--position-animated"
+    );
+  });
+
+  it("updates labels quietly without replaying an entrance", () => {
+    const { rerender } = render(
+      <DiagramCanvas model={buildModel('component api as "Orders API" service')} motionContextKey="doc-1" />
+    );
+
+    rerender(
+      <DiagramCanvas model={buildModel('component api as "Checkout API" service')} motionContextKey="doc-1" />
+    );
+
+    expect(screen.getByText("Checkout API").closest(".react-flow__node")).not.toHaveClass("diagram-node--entering");
+  });
+
+  it("updates an identifier on the same source line without replaying an entrance", () => {
+    const { rerender } = render(
+      <DiagramCanvas model={buildModel("component W service")} motionContextKey="doc-1" />
+    );
+
+    rerender(<DiagramCanvas model={buildModel("component Wo service")} motionContextKey="doc-1" />);
+
+    expect(screen.getByText("Wo").closest(".react-flow__node")).not.toHaveClass("diagram-node--entering");
+  });
+
+  it("does not animate the incoming graph when the document context changes", () => {
+    const { rerender } = render(
+      <DiagramCanvas model={buildModel("component API service")} motionContextKey="doc-1" />
+    );
+
+    rerender(
+      <DiagramCanvas
+        model={buildModel("component API service\ncomponent Worker service")}
+        motionContextKey="doc-2"
+      />
+    );
+
+    expect(screen.getByText("Worker").closest(".react-flow__node")).not.toHaveClass("diagram-node--entering");
+  });
+});
+
 describe("DiagramCanvas zoom controls", () => {
   it("shows the current zoom level as a percentage", () => {
     const model = buildModel("component API service\nnorth -> API");

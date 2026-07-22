@@ -32,6 +32,8 @@ Motion uses a single coherent easing family. It should feel soft and energetic, 
 
 `DiagramCanvas` remains the owner of graph presentation. A small motion-classification unit compares stable node and edge IDs from the previously rendered flow with the next flow and returns the IDs that are new. Stable IDs already exist for components, externals, gateways, and connections, so no DSL or domain-model changes are required.
 
+For live identifier editing, nodes also receive a motion-only identity derived from their source line. React Flow continues to use the real component ID for layout and connections. If an identifier changes while its source line remains the same, the classifier treats it as the same visual node; inserting a genuinely new line still produces a new-node entrance.
+
 The classification distinguishes three situations:
 
 - **Initial or context render:** no entrance classes are applied.
@@ -55,6 +57,8 @@ The existing automatic `fitView` behavior remains in place. Its current 200 mill
 ## Rapid Editing and Invalid DSL
 
 Each valid compiled model is compared with the last valid rendered model. If the user types through a temporarily invalid state, `App` continues showing the last valid graph, as it does today. When the source becomes valid again, only IDs genuinely added relative to that last valid graph receive entrance motion.
+
+Diagram model updates use a 120 millisecond trailing debounce. Editor content and diagnostics remain immediate, while rapid valid keystrokes settle into one diagram update. Document switches bypass the delay so the incoming document appears immediately.
 
 If another edit arrives before an animation finishes, the latest React Flow positions replace the target positions and CSS transitions continue toward the newest target. Motion classification is recalculated from the most recently rendered valid ID sets, preventing an existing node from repeatedly replaying its entrance.
 

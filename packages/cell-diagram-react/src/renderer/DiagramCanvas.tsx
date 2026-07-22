@@ -18,11 +18,12 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import "./diagram.css";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProjectModel } from "../domain/cellModel";
 import { FitScreenIcon, ZoomInIcon, ZoomOutIcon } from "../ui/ControlIcons";
 // TODO: re-enable when the PNG/SVG image export feature is complete.
 // import { exportPng, exportSvg } from "./exportImage";
+import { classifyDiagramMotion, type DiagramMotionSnapshot } from "./diagramMotion";
 import { getFloatingAnchors, shapeForNodeType, type NodeRect } from "./floatingGeometry";
 import { toReactFlow } from "./flowLayout";
 import { connectionIdsForNode, edgeConnectionId, highlightedNodeIdsForConnections } from "./highlightModel";
@@ -116,13 +117,26 @@ function GatewayNode({ data }: NodeProps) {
   );
 }
 
-function EdgeLabel({ label, x, y }: { label: EdgeProps["label"]; x: number; y: number }) {
+function EdgeLabel({
+  label,
+  x,
+  y,
+  entering = false
+}: {
+  label: EdgeProps["label"];
+  x: number;
+  y: number;
+  entering?: boolean;
+}) {
   if (!label) {
     return null;
   }
   return (
     <EdgeLabelRenderer>
-      <div className="edge-label" style={{ transform: `translate(-50%, -50%) translate(${x}px,${y}px)` }}>
+      <div
+        className={entering ? "edge-label edge-label--entering" : "edge-label"}
+        style={{ transform: `translate(-50%, -50%) translate(${x}px,${y}px)` }}
+      >
         {label}
       </div>
     </EdgeLabelRenderer>
@@ -132,10 +146,16 @@ function EdgeLabel({ label, x, y }: { label: EdgeProps["label"]; x: number; y: n
 function makePathEdge(computePath: (props: EdgeProps) => [string, number, number, ...unknown[]]) {
   return function PathEdge(props: EdgeProps) {
     const [edgePath, labelX, labelY] = computePath(props);
+    const isEntering = props.data?.motionStatus === "entering";
     return (
       <>
-        <path className="react-flow__edge-path" d={edgePath} markerEnd={props.markerEnd} />
-        <EdgeLabel label={props.label} x={labelX} y={labelY} />
+        <path
+          className="react-flow__edge-path"
+          d={edgePath}
+          markerEnd={props.markerEnd}
+          pathLength={isEntering ? 1 : undefined}
+        />
+        <EdgeLabel label={props.label} x={labelX} y={labelY} entering={isEntering} />
       </>
     );
   };
@@ -193,11 +213,17 @@ function FloatingEdge(props: EdgeProps) {
     targetY: ty,
     targetPosition: positions.target
   });
+  const isEntering = props.data?.motionStatus === "entering";
 
   return (
     <>
-      <path className="react-flow__edge-path" d={edgePath} markerEnd={props.markerEnd} />
-      <EdgeLabel label={props.label} x={labelX} y={labelY} />
+      <path
+        className="react-flow__edge-path"
+        d={edgePath}
+        markerEnd={props.markerEnd}
+        pathLength={isEntering ? 1 : undefined}
+      />
+      <EdgeLabel label={props.label} x={labelX} y={labelY} entering={isEntering} />
     </>
   );
 }
@@ -227,6 +253,7 @@ export interface DiagramCanvasInsets {
 const DEFAULT_INSETS: DiagramCanvasInsets = { left: 0, right: 0 };
 const FIT_VIEW_VERTICAL_PADDING: `${number}px` = "112px";
 const FIT_VIEW_LEFT_PADDING = 112;
+const MOTION_SETTLE_MS = 420;
 
 interface FitPadding {
   top: `${number}px`;
@@ -324,13 +351,27 @@ interface DiagramCanvasProps {
   model: ProjectModel | null;
   insets?: DiagramCanvasInsets;
   fitKey?: string;
+  motionContextKey?: string;
 }
 
-export function DiagramCanvas({ model, insets = DEFAULT_INSETS, fitKey }: DiagramCanvasProps) {
+export function DiagramCanvas({
+  model,
+  insets = DEFAULT_INSETS,
+  fitKey,
+  motionContextKey = "default"
+}: DiagramCanvasProps) {
   const [activeConnectionIds, setActiveConnectionIds] = useState<string[]>([]);
+  const [, setMotionVersion] = useState(0);
+  const previousMotionSnapshot = useRef<DiagramMotionSnapshot | null>(null);
   const flow = useMemo<ReturnType<typeof toReactFlow>>(
     () => (model ? toReactFlow(model) : { nodes: [], edges: [], cellSize: { width: 0, height: 0 } }),
     [model]
+  );
+  const motion = classifyDiagramMotion(
+    previousMotionSnapshot.current,
+    flow.nodes,
+    flow.edges,
+    motionContextKey
   );
   const activeConnectionIdSet = useMemo(() => new Set(activeConnectionIds), [activeConnectionIds]);
   const highlightedNodeIds = useMemo(() => {
@@ -352,20 +393,32 @@ export function DiagramCanvas({ model, insets = DEFAULT_INSETS, fitKey }: Diagra
     () =>
       flow.nodes.map((node) => ({
         ...node,
-        className: isFocusView
-          ? highlightedNodeIds.has(node.id)
-            ? "connection-highlight-node"
-            : "connection-dimmed-node"
-          : node.className
+        className: [
+          node.className,
+          motion.enteringNodeIds.has(node.id) ? "diagram-node--entering" : "",
+          motion.movingNodeIds.has(node.id) ? "diagram-node--position-animated" : "",
+          isFocusView
+            ? highlightedNodeIds.has(node.id)
+              ? "connection-highlight-node"
+              : "connection-dimmed-node"
+            : ""
+        ]
+          .filter(Boolean)
+          .join(" ")
       })),
-    [flow.nodes, highlightedNodeIds, isFocusView]
+    [flow.nodes, highlightedNodeIds, isFocusView, motion.enteringNodeIds, motion.movingNodeIds]
   );
   const edges = useMemo<Edge[]>(
     () =>
       flow.edges.map((edge) => ({
         ...edge,
+        data: {
+          ...edge.data,
+          motionStatus: motion.enteringEdgeIds.has(edge.id) ? "entering" : "idle"
+        },
         className: [
           edge.className,
+          motion.enteringEdgeIds.has(edge.id) ? "diagram-edge--entering" : "",
           isFocusView
             ? activeConnectionIdSet.has(edgeConnectionId(edge))
               ? "connection-highlight-edge"
@@ -375,8 +428,21 @@ export function DiagramCanvas({ model, insets = DEFAULT_INSETS, fitKey }: Diagra
           .filter(Boolean)
           .join(" ")
       })),
-    [activeConnectionIdSet, flow.edges, isFocusView]
+    [activeConnectionIdSet, flow.edges, isFocusView, motion.enteringEdgeIds]
   );
+
+  useEffect(() => {
+    previousMotionSnapshot.current = motion.snapshot;
+  }, [flow.edges, flow.nodes, motion.snapshot, motionContextKey]);
+
+  useEffect(() => {
+    if (motion.enteringNodeIds.size === 0 && motion.enteringEdgeIds.size === 0) {
+      return;
+    }
+
+    const settleTimer = window.setTimeout(() => setMotionVersion((current) => current + 1), MOTION_SETTLE_MS);
+    return () => window.clearTimeout(settleTimer);
+  }, [motion.enteringEdgeIds, motion.enteringNodeIds]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -398,7 +464,7 @@ export function DiagramCanvas({ model, insets = DEFAULT_INSETS, fitKey }: Diagra
   }
 
   return (
-    <ReactFlowProvider>
+    <ReactFlowProvider key={motionContextKey}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

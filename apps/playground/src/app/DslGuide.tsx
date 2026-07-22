@@ -158,11 +158,13 @@ const guideGroups: GuideGroup[] = [
       {
         id: "cell-blocks",
         title: "Cell blocks and project title",
-        detail: "Group each cell inside a block and optionally set an overall project title.",
+        detail:
+          "Adding a cell block switches the document to multi-cell mode. Move every local declaration and dependency into a named cell block; the editor offers a one-click conversion when it detects loose single-cell content.",
         topics: [
           {
             title: "Cell blocks",
-            detail: "Everything valid in a single cell is valid inside a cell block.",
+            detail:
+              "Everything valid in a single cell is valid inside a cell block. Keep the optional project title and fully qualified cross-cell links outside the blocks.",
             examples: [
               {
                 code: 'title CommercePlatform\n\ncell orders as "Order Cell" {\n  version v2\n  component api\n}\n\ncell products {\n  component api\n}'

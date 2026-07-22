@@ -200,6 +200,41 @@ button:disabled {
   color: #be123c;
 }
 
+.editor-panel__recovery {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+}
+
+.editor-panel__recovery strong {
+  color: #9a3412;
+}
+
+.editor-panel__recovery-helper {
+  color: #9a3412 !important;
+  font-weight: 700;
+}
+
+.editor-panel__recovery-helper code {
+  padding: 1px 4px;
+  background: #ffedd5;
+  border-radius: 4px;
+  color: #7c2d12;
+  font-size: inherit;
+}
+
+.editor-panel__recovery-action {
+  gap: 7px;
+  justify-self: start;
+}
+
+.editor-panel__recovery-action:hover {
+  border-color: #94a3b8;
+}
+
 .editor-panel__resize-handle {
   position: absolute;
   right: 3px;
@@ -1029,6 +1064,10 @@ button:disabled {
   padding: 10px 12px;
 }
 
+.app-shell[data-layout-mode="mobile"] .editor-panel__recovery-action {
+  width: 100%;
+}
+
 .app-shell[data-layout-mode="mobile"] .editor-panel__resize-handle {
   display: none;
 }
@@ -1164,6 +1203,10 @@ button:disabled {
   .editor-panel__diagnostics {
     max-height: 116px;
     padding: 10px 12px;
+  }
+
+  .editor-panel__recovery-action {
+    width: 100%;
   }
 
   .editor-panel__resize-handle {

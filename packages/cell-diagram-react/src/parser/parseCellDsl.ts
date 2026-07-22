@@ -318,3 +318,11 @@ export function parseCellDsl(source: string): ParseResult {
 
   return { document, diagnostics };
 }
+
+export function isCellDslStatement(statement: string): boolean {
+  const trimmed = statement.trim();
+  if (!trimmed || trimmed.startsWith("#") || trimmed.startsWith("//")) {
+    return false;
+  }
+  return parseCellDsl(trimmed).diagnostics.length === 0;
+}

@@ -132,4 +132,11 @@ describe("DslGuide", () => {
     await user.click(screen.getByRole("button", { name: "Copy Multi-cell DSL example" }));
     expect(screen.getByRole("button", { name: "Copy Multi-cell DSL example" })).toHaveTextContent("Copied");
   });
+
+  it("explains the multi-cell mode transition and one-click migration", () => {
+    render(<DslGuide onClose={vi.fn()} />);
+
+    expect(screen.getByText(/Adding a cell block switches the document to multi-cell mode/)).toBeInTheDocument();
+    expect(screen.getByText(/one-click conversion/)).toBeInTheDocument();
+  });
 });

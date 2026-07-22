@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProject } from "./parseProject";
+import { MIXED_CELL_MODE_DIAGNOSTIC_CODE, MIXED_CELL_MODE_MESSAGE, parseProject } from "./parseProject";
 
 describe("parseProject", () => {
   it("parses a single implicit cell (backward compatible)", () => {
@@ -64,14 +64,29 @@ describe("parseProject", () => {
   it("flags top-level component statements mixed with cell blocks", () => {
     const source = "component loose\ncell a {\n  component x\n}";
     const result = parseProject(source);
-    expect(result.diagnostics.some((d) => /outside a cell/i.test(d.message))).toBe(true);
+    expect(result.diagnostics).toContainEqual({
+      severity: "error",
+      code: MIXED_CELL_MODE_DIAGNOSTIC_CODE,
+      message: MIXED_CELL_MODE_MESSAGE,
+      line: 1,
+      column: 1
+    });
   });
 
-  it("rejects an unqualified source on a top-level cross edge", () => {
+  it("marks an unqualified source on a top-level cross edge as convertible mixed DSL", () => {
     const source = "cell a {\n  component x\n}\nx -> b.y";
     const result = parseProject(source);
-    expect(result.diagnostics.some((d) => /qualified source/i.test(d.message))).toBe(true);
+    expect(result.diagnostics[0]).toMatchObject({ code: MIXED_CELL_MODE_DIAGNOSTIC_CODE, line: 4 });
     expect(result.project.crossEdges).toEqual([]);
+  });
+
+  it("keeps the generic outside-cell diagnostic for malformed loose syntax", () => {
+    const result = parseProject("not valid DSL\ncell a {\n  component x\n}");
+    expect(result.diagnostics[0]).toMatchObject({
+      message: "Only `title`, comments, and cross-cell edges are allowed outside a cell block.",
+      line: 1
+    });
+    expect(result.diagnostics[0].code).toBeUndefined();
   });
 
   it("flags a top-level bare-south cross edge", () => {

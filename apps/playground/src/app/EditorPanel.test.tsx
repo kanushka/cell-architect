@@ -41,6 +41,83 @@ describe("EditorPanel", () => {
     expect(screen.queryByText("No parser issues. The diagram is generated from this source.")).not.toBeInTheDocument();
   });
 
+  it("groups mixed-mode diagnostics into one conversion card while keeping other issues", () => {
+    const source = "component loose\nloose -> existing.api\ncell existing {\n  component api\n}";
+    renderPanel({
+      source,
+      diagnostics: [
+        {
+          severity: "error",
+          code: "mixed-cell-mode",
+          message: "Mixed",
+          line: 1,
+          column: 1
+        },
+        {
+          severity: "error",
+          code: "mixed-cell-mode",
+          message: "Mixed",
+          line: 2,
+          column: 1
+        },
+        { severity: "error", message: "Another issue", line: 7, column: 2 }
+      ]
+    });
+
+    expect(screen.getAllByText("Complete multi-cell setup")).toHaveLength(1);
+    expect(screen.queryByText("Mixed")).not.toBeInTheDocument();
+    expect(screen.getByText("Another issue")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Complete multi-cell setup" })).toHaveTextContent(
+      "Creates cell main and moves 2 loose statements."
+    );
+    expect(screen.getByRole("button", { name: "Convert to multi-cell" })).toHaveClass("pill-button");
+  });
+
+  it("applies the proposed one-click conversion through onSourceChange", async () => {
+    const user = userEvent.setup();
+    const source = "component loose\ncell main {\n  component api\n}";
+    const props = renderPanel({
+      source,
+      diagnostics: [
+        {
+          severity: "error",
+          code: "mixed-cell-mode",
+          message: "Mixed",
+          line: 1,
+          column: 1
+        }
+      ]
+    });
+
+    expect(screen.getByRole("region", { name: "Complete multi-cell setup" })).toHaveTextContent(
+      "Creates cell main-2 and moves 1 loose statement."
+    );
+    await user.click(screen.getByRole("button", { name: "Convert to multi-cell" }));
+
+    expect(props.onSourceChange).toHaveBeenCalledWith(
+      "cell main-2 {\n  component loose\n}\n\ncell main {\n  component api\n}"
+    );
+  });
+
+  it("falls back to the line diagnostic when no safe conversion is available", () => {
+    renderPanel({
+      source: "cell existing {\n  component api\n}",
+      diagnostics: [
+        {
+          severity: "error",
+          code: "mixed-cell-mode",
+          message: "Mixed source",
+          line: 1,
+          column: 1
+        }
+      ]
+    });
+
+    expect(screen.queryByRole("button", { name: "Convert to multi-cell" })).not.toBeInTheDocument();
+    expect(screen.getByText("Mixed source")).toBeInTheDocument();
+    expect(screen.getByText("Line 1, col 1")).toBeInTheDocument();
+  });
+
   it("hides the entire panel when collapsed, showing only the expand control", () => {
     renderPanel({ collapsed: true });
 

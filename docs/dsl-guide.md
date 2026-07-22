@@ -294,6 +294,18 @@ north CustomerApp -> WebApp : HTTPS
 WebApp -> OrderAPI
 ```
 
+## Manual Arrangement
+
+Drag an internal component to reposition it inside its cell. External components
+can move only along the boundary side declared by the DSL. Cell boundaries and
+gateways stay fixed.
+
+A manual arrangement is temporary. Editing the DSL or selecting **Auto arrange**
+resets every component to the automatic Dagre layout. Export the diagram as a
+`.cell` file or create a share link to preserve the current arrangement. Cell
+Architect stores the positions in an application-owned `# @layout=` comment that
+is hidden from the DSL editor and ignored by older parsers.
+
 ## Complete Example
 
 ```cell

@@ -143,6 +143,60 @@ describe("DiagramCanvas component styling", () => {
   });
 });
 
+describe("DiagramCanvas live-edit motion", () => {
+  it("keeps the initial graph still, then animates only a newly added circle", () => {
+    const initialModel = buildModel("component API service");
+    const { rerender } = render(<DiagramCanvas model={initialModel} motionContextKey="doc-1" />);
+
+    expect(screen.getByText("API").closest(".react-flow__node")).not.toHaveClass("diagram-node--entering");
+
+    const nextModel = buildModel("component API service\ncomponent Worker service");
+    rerender(<DiagramCanvas model={nextModel} motionContextKey="doc-1" />);
+
+    expect(screen.getByText("Worker").closest(".react-flow__node")).toHaveClass("diagram-node--entering");
+    expect(screen.getByText("API").closest(".react-flow__node")).toHaveClass(
+      "diagram-node--position-animated"
+    );
+  });
+
+  it("updates labels quietly without replaying an entrance", () => {
+    const { rerender } = render(
+      <DiagramCanvas model={buildModel('component api as "Orders API" service')} motionContextKey="doc-1" />
+    );
+
+    rerender(
+      <DiagramCanvas model={buildModel('component api as "Checkout API" service')} motionContextKey="doc-1" />
+    );
+
+    expect(screen.getByText("Checkout API").closest(".react-flow__node")).not.toHaveClass("diagram-node--entering");
+  });
+
+  it("updates an identifier on the same source line without replaying an entrance", () => {
+    const { rerender } = render(
+      <DiagramCanvas model={buildModel("component W service")} motionContextKey="doc-1" />
+    );
+
+    rerender(<DiagramCanvas model={buildModel("component Wo service")} motionContextKey="doc-1" />);
+
+    expect(screen.getByText("Wo").closest(".react-flow__node")).not.toHaveClass("diagram-node--entering");
+  });
+
+  it("does not animate the incoming graph when the document context changes", () => {
+    const { rerender } = render(
+      <DiagramCanvas model={buildModel("component API service")} motionContextKey="doc-1" />
+    );
+
+    rerender(
+      <DiagramCanvas
+        model={buildModel("component API service\ncomponent Worker service")}
+        motionContextKey="doc-2"
+      />
+    );
+
+    expect(screen.getByText("Worker").closest(".react-flow__node")).not.toHaveClass("diagram-node--entering");
+  });
+});
+
 describe("DiagramCanvas zoom controls", () => {
   it("shows the current zoom level as a percentage", () => {
     const model = buildModel("component API service\nnorth -> API");
@@ -183,5 +237,49 @@ describe("DiagramCanvas zoom controls", () => {
     render(<DiagramCanvas model={model} />);
     expect(screen.queryByRole("button", { name: /export png/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /export svg/i })).not.toBeInTheDocument();
+  });
+
+  it("disables Auto arrange until a custom layout exists", () => {
+    const model = buildModel("component API service\nnorth -> API");
+    render(<DiagramCanvas model={model} />);
+
+    expect(screen.getByRole("button", { name: "Auto arrange components" })).toBeDisabled();
+  });
+
+  it("renders a supplied canvas message in the shared slot and wires Auto arrange", () => {
+    const model = buildModel("component API service\nnorth -> API");
+    const onAutoArrange = vi.fn();
+    render(
+      <DiagramCanvas
+        model={model}
+        customLayout={{
+          version: 1,
+          sourceFingerprint: "test",
+          nodes: { API: { kind: "component", cellId: "main", x: 200, y: 200 } }
+        }}
+        canvasMessage={{ id: 1, tone: "warning", text: "Manual arrangement is temporary." }}
+        onAutoArrange={onAutoArrange}
+      />
+    );
+
+    const message = screen.getByRole("status");
+    expect(message).toHaveTextContent("Manual arrangement is temporary.");
+    expect(message).toHaveClass("canvas-notification");
+    expect(message).toHaveAttribute("data-tone", "warning");
+    expect(document.querySelectorAll(".canvas-notification")).toHaveLength(1);
+    const button = screen.getByRole("button", { name: "Auto arrange components" });
+    expect(button).toBeEnabled();
+    fireEvent.click(button);
+    expect(onAutoArrange).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses the shared slot for the resting focus hint", () => {
+    const model = buildModel("component API service\nnorth -> API");
+    const { container } = render(<DiagramCanvas model={model} />);
+
+    const slot = screen.getByText("Click a component to focus its connections.");
+    expect(slot).toHaveClass("canvas-notification");
+    expect(slot).toHaveAttribute("data-mode", "hint");
+    expect(container.querySelectorAll(".canvas-notification")).toHaveLength(1);
   });
 });

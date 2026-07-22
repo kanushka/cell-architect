@@ -6,6 +6,12 @@
   --south: #059669;
   --west: #7c3aed;
   --panel-edge-offset: 14px;
+  --diagram-layout-duration: 300ms;
+  --diagram-node-enter-duration: 360ms;
+  --diagram-edge-enter-duration: 220ms;
+  --diagram-edge-enter-delay: 80ms;
+  --diagram-layout-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --diagram-arrive-ease: cubic-bezier(0.16, 1.28, 0.3, 1);
 }
 
 .zoom-controls {
@@ -45,6 +51,27 @@
   font-weight: 750;
 }
 
+.zoom-controls__auto {
+  min-height: 26px;
+  margin-left: 2px;
+  padding: 0 8px;
+  color: #334155;
+  background: transparent;
+  border-left: 1px solid #d6dee8;
+  border-radius: 0 6px 6px 0;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.zoom-controls__auto:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.zoom-controls__auto:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
 .cell-boundary {
   position: relative;
   aspect-ratio: 1;
@@ -53,6 +80,16 @@
   border: 0;
   overflow: visible;
   pointer-events: none;
+}
+
+.diagram-node--position-animated {
+  transition: transform var(--diagram-layout-duration) var(--diagram-layout-ease);
+}
+
+.diagram-node--position-animated .cell-boundary {
+  transition:
+    width var(--diagram-layout-duration) var(--diagram-layout-ease),
+    height var(--diagram-layout-duration) var(--diagram-layout-ease);
 }
 
 .cell-boundary__outline {
@@ -237,6 +274,30 @@
   border-color: var(--west);
 }
 
+.diagram-node--entering .component-node,
+.diagram-node--entering .external-node,
+.diagram-node--entering .gateway-node {
+  transform-origin: center;
+  animation: diagram-node-arrive var(--diagram-node-enter-duration) var(--diagram-arrive-ease) backwards;
+}
+
+@keyframes diagram-node-arrive {
+  0% {
+    opacity: 0;
+    transform: scale(0.68);
+  }
+
+  68% {
+    opacity: 1;
+    transform: scale(1.045);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .react-flow__handle {
   width: 7px;
   height: 7px;
@@ -260,6 +321,38 @@
   stroke: #475569;
   stroke-width: 2;
   transition: stroke-width 140ms ease, opacity 140ms ease, filter 140ms ease;
+}
+
+.diagram-edge--entering .react-flow__edge-path {
+  animation: diagram-edge-arrive var(--diagram-edge-enter-duration) ease-out var(--diagram-edge-enter-delay) backwards;
+}
+
+.edge-label--entering {
+  animation: diagram-edge-label-arrive 150ms ease-out 160ms backwards;
+}
+
+@keyframes diagram-edge-arrive {
+  0% {
+    opacity: 0;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes diagram-edge-label-arrive {
+  from {
+    opacity: 0;
+  }
 }
 
 .edge-north .react-flow__edge-path {
@@ -300,11 +393,13 @@
   opacity: 0.34;
 }
 
-.focus-hint {
+.canvas-notification {
   position: absolute;
   left: 50%;
   bottom: 18px;
   z-index: 5;
+  width: max-content;
+  max-width: min(620px, calc(100% - 32px));
   transform: translateX(-50%);
   padding: 8px 12px;
   color: #334155;
@@ -314,14 +409,53 @@
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.1);
   font-size: 12px;
   font-weight: 850;
+  line-height: 1.4;
   pointer-events: none;
+  text-align: center;
+}
+
+.canvas-notification[data-mode="hint"] {
   white-space: nowrap;
 }
 
-.focus-hint[data-focus-mode="active"] {
+.canvas-notification[data-mode="hint"][data-focus-mode="active"] {
   color: #0f172a;
   border-color: #93c5fd;
   box-shadow: 0 12px 30px rgba(37, 99, 235, 0.16);
+}
+
+.canvas-notification[data-mode="message"] {
+  border-radius: 10px;
+  font-weight: 750;
+  animation: canvas-notification-pop 180ms ease-out;
+}
+
+.canvas-notification[data-tone="warning"] {
+  color: #854d0e;
+  background: rgba(254, 249, 195, 0.96);
+  border: 1px solid #facc15;
+  box-shadow: 0 12px 30px rgba(113, 63, 18, 0.2);
+}
+
+.canvas-notification[data-tone="info"] {
+  color: #ffffff;
+  background: #334155;
+  border-color: #334155;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.2);
+}
+
+@keyframes canvas-notification-pop {
+  from {
+    opacity: 0;
+    scale: 0.96;
+    translate: 0 6px;
+  }
+
+  to {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
 }
 
 .empty-canvas {
@@ -349,11 +483,32 @@
     bottom: 8px;
   }
 
-  .focus-hint {
+  .canvas-notification {
     left: 8px;
     right: 8px;
     bottom: 54px;
+    width: auto;
+    max-width: none;
     transform: none;
     text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-notification[data-mode="message"] {
+    animation: none;
+  }
+
+  .diagram-node--position-animated,
+  .diagram-node--position-animated .cell-boundary {
+    transition: none;
+  }
+
+  .diagram-node--entering .component-node,
+  .diagram-node--entering .external-node,
+  .diagram-node--entering .gateway-node,
+  .diagram-edge--entering .react-flow__edge-path,
+  .edge-label--entering {
+    animation: none;
   }
 }

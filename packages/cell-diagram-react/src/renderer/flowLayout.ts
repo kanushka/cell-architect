@@ -254,6 +254,18 @@ function namespaced(cellId: string, id: string, multi: boolean) {
   return multi ? `${cellId}::${id}` : id;
 }
 
+function motionKeyForLine(cellId: string, kind: "component" | "external", line: number | undefined, id: string) {
+  return typeof line === "number" ? `${cellId}:${kind}:${line}` : `${cellId}:${kind}:id:${id}`;
+}
+
+function componentSourceLine(cell: CellModel, componentId: string, declaredLine: number | undefined) {
+  if (typeof declaredLine === "number") {
+    return declaredLine;
+  }
+
+  return cell.edges.find((edge) => edge.source === componentId || edge.target === componentId)?.line;
+}
+
 function gatewayNodeId(cellId: string, direction: string, multi: boolean) {
   return multi ? `gateway-${cellId}-${direction}` : `gateway-${direction}`;
 }
@@ -479,9 +491,11 @@ function emitDecoupledCrossEdges(
         nodeId: stubOutId,
         label: `${edge.targetCell}.${edge.targetComp}`,
         externalType: undefined,
-        direction: edge.exit
+        direction: edge.exit,
+        layoutKind: "external",
+        cellId: edge.sourceCell
       },
-      draggable: false
+      draggable: true
     });
     nodes.push({
       id: stubInId,
@@ -491,9 +505,11 @@ function emitDecoupledCrossEdges(
         nodeId: stubInId,
         label: `${edge.sourceCell}.${edge.sourceComp}`,
         externalType: undefined,
-        direction: edge.entry
+        direction: edge.entry,
+        layoutKind: "external",
+        cellId: edge.targetCell
       },
-      draggable: false
+      draggable: true
     });
 
     const outData = connectionData(`${edge.id}-out`, [srcComp, srcGate, stubOutId]);
@@ -610,7 +626,9 @@ export function toReactFlow(project: ProjectModel) {
         title: cell.label ?? (multi ? cell.id : project.title),
         version: cell.version,
         width: layout.width,
-        height: layout.height
+        height: layout.height,
+        layoutKind: "cell",
+        cellId: cell.id
       },
       draggable: false,
       selectable: false
@@ -618,12 +636,20 @@ export function toReactFlow(project: ProjectModel) {
 
     layout.nodes.forEach(({ component, x, y }) => {
       const id = namespaced(cell.id, component.id, multi);
+      const sourceLine = componentSourceLine(cell, component.id, component.line);
       nodes.push({
         id,
         type: "component",
         position: { x: originX + x, y: originY + y },
-        data: { nodeId: id, label: component.label ?? component.id, componentType: component.type },
-        draggable: false
+        data: {
+          nodeId: id,
+          label: component.label ?? component.id,
+          componentType: component.type,
+          motionKey: motionKeyForLine(cell.id, "component", sourceLine, component.id),
+          layoutKind: "component",
+          cellId: cell.id
+        },
+        draggable: true
       });
     });
 
@@ -640,7 +666,7 @@ export function toReactFlow(project: ProjectModel) {
         id,
         type: "gateway",
         position: { x: originX + position.x, y: originY + position.y },
-        data: { nodeId: id, direction },
+        data: { nodeId: id, direction, layoutKind: "gateway", cellId: cell.id },
         draggable: false
       });
     });
@@ -663,9 +689,12 @@ export function toReactFlow(project: ProjectModel) {
           nodeId: id,
           label: external.label ?? external.id,
           externalType: external.type,
-          direction: external.direction
+          direction: external.direction,
+          motionKey: motionKeyForLine(cell.id, "external", external.line, external.id),
+          layoutKind: "external",
+          cellId: cell.id
         },
-        draggable: false
+        draggable: true
       });
     });
 
@@ -685,9 +714,11 @@ export function toReactFlow(project: ProjectModel) {
         nodeId: `external-${ext.id}`,
         label: ext.label ?? ext.id,
         externalType: ext.type,
-        direction: ext.direction ?? "east"
+        direction: ext.direction ?? "east",
+        motionKey: motionKeyForLine("shared", "external", ext.line, ext.id),
+        layoutKind: "shared-external"
       },
-      draggable: false
+      draggable: true
     });
   });
 

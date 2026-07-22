@@ -21,6 +21,7 @@ interface EditorPanelProps {
   onDocumentNameChange: (name: string) => void;
   source: string;
   onSourceChange: (source: string) => void;
+  onSourceFocus?: () => void;
   diagnostics: Diagnostic[];
   collapsed: boolean;
   onToggleCollapsed: () => void;
@@ -40,6 +41,7 @@ export function EditorPanel({
   onDocumentNameChange,
   source,
   onSourceChange,
+  onSourceFocus,
   diagnostics,
   collapsed,
   onToggleCollapsed,
@@ -129,7 +131,7 @@ export function EditorPanel({
           </span>
         </div>
       </div>
-      <SourceEditor value={source} onChange={onSourceChange} />
+      <SourceEditor value={source} onChange={onSourceChange} onFocus={onSourceFocus} />
       <div className="editor-panel__diagnostics">
         {diagnostics.length === 0 ? (
           <p>No parser issues. The diagram is generated from this source.</p>

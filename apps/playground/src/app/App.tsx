@@ -1,6 +1,13 @@
 import { BookOpen } from "lucide-react";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { compileProject, DiagramCanvas } from "@kanushka/cell-diagram-react";
+import {
+  compileProject,
+  DiagramCanvas,
+  parsePortableSource,
+  serializePortableSource,
+  type CanvasMessage,
+  type CustomLayout
+} from "@kanushka/cell-diagram-react";
 import { clearShareUrl, decodeShareSource, readShareParam } from "../share/shareLink";
 import {
   createDocument,
@@ -23,6 +30,9 @@ import { ShareButton } from "./ShareButton";
 import { ShareImportDialog } from "./ShareImportDialog";
 import "@kanushka/cell-diagram-react/style.css";
 import "./styles.css";
+import { useDebouncedValue } from "./useDebouncedValue";
+
+const DIAGRAM_MODEL_DEBOUNCE_MS = 120;
 
 function downloadText(filename: string, content: string) {
   const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
@@ -37,7 +47,15 @@ function downloadText(filename: string, content: string) {
 interface PendingShare {
   name: string;
   source: string;
+  layout: CustomLayout | null;
 }
+
+interface TimedCanvasMessage extends CanvasMessage {
+  durationMs: number;
+}
+
+const TEMPORARY_LAYOUT_WARNING =
+  "Manual arrangement is temporary. Editing the DSL or choosing Auto arrange will reset it. Export the .cell file to preserve it.";
 
 type MobileTab = "code" | "diagram";
 
@@ -71,6 +89,9 @@ export function App() {
   const [deleteTarget, setDeleteTarget] = useState<DiagramDocument | null>(null);
   const [pendingShare, setPendingShare] = useState<PendingShare | null>(null);
   const [shareError, setShareError] = useState<string | null>(null);
+  const [sessionLayout, setSessionLayout] = useState<{ documentId: string; layout: CustomLayout } | null>(null);
+  const [canvasMessage, setCanvasMessage] = useState<TimedCanvasMessage | null>(null);
+  const canvasMessageIdRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isTabbedWorkbench = useIsTabbedWorkbench(editorWidth);
 
@@ -82,23 +103,31 @@ export function App() {
       }
 
       clearShareUrl();
-      const source = decodeShareSource(param);
+      const portableSource = decodeShareSource(param);
 
-      if (!source) {
+      if (!portableSource) {
         setShareError("This share link is invalid or corrupted.");
         return;
+      }
+
+      const { source, layout, layoutError } = parsePortableSource(portableSource);
+      if (layoutError) {
+        showCanvasMessage("info", "The shared manual layout could not be restored. Auto arrange was used instead.");
       }
 
       const name = compileProject(source).model?.title || "Shared Cell";
       const state = loadRepository();
 
       if (state.documents.length < MAX_DOCUMENTS) {
-        createDocument(name, source);
+        const created = createDocument(name, source);
+        if (created && layout) {
+          setSessionLayout({ documentId: created.id, layout });
+        }
         setRepository(loadRepository());
         return;
       }
 
-      setPendingShare({ name, source });
+      setPendingShare({ name, source, layout });
     }
 
     processShareLink();
@@ -106,14 +135,24 @@ export function App() {
     return () => window.removeEventListener("hashchange", processShareLink);
   }, []);
 
+  useEffect(() => {
+    if (!canvasMessage) {
+      return;
+    }
+    const timer = window.setTimeout(() => setCanvasMessage(null), canvasMessage.durationMs);
+    return () => window.clearTimeout(timer);
+  }, [canvasMessage]);
+
   const activeDocument =
     repository.documents.find((document) => document.id === repository.activeDocumentId) ?? repository.documents[0];
+  const customLayout = sessionLayout?.documentId === activeDocument.id ? sessionLayout.layout : null;
   const compiled = useMemo(() => compileProject(activeDocument.source), [activeDocument.source]);
   const lastValidModel = useRef(compiled.model);
   if (compiled.model) {
     lastValidModel.current = compiled.model;
   }
   const visibleModel = compiled.model ?? lastValidModel.current;
+  const diagramModel = useDebouncedValue(visibleModel, DIAGRAM_MODEL_DEBOUNCE_MS, activeDocument.id);
   const isAtDocumentLimit = repository.documents.length >= MAX_DOCUMENTS;
   const insets = computeCanvasInsets({
     editorOpen,
@@ -128,11 +167,21 @@ export function App() {
     setRepository(loadRepository());
   }
 
+  function showCanvasMessage(tone: CanvasMessage["tone"], text: string, durationMs = 3000) {
+    canvasMessageIdRef.current += 1;
+    setCanvasMessage({ id: canvasMessageIdRef.current, tone, text, durationMs });
+  }
+
   function setActiveDocument(id: string) {
+    setSessionLayout(null);
     setRepository(replaceRepository({ ...repository, activeDocumentId: id }));
   }
 
   function updateActiveSource(source: string) {
+    if (customLayout) {
+      setSessionLayout(null);
+      showCanvasMessage("info", "Manual layout reset after DSL change.");
+    }
     const updated = saveDocument({ ...activeDocument, source });
     setRepository({ ...loadRepository(), activeDocumentId: updated.id });
   }
@@ -147,6 +196,7 @@ export function App() {
       return;
     }
 
+    setSessionLayout(null);
     createDocument("Untitled Cell", "title UntitledCell\n\ncomponent API service\n");
     refreshRepository();
   }
@@ -162,6 +212,7 @@ export function App() {
       return;
     }
 
+    setSessionLayout(null);
     duplicateDocument(document.id);
     refreshRepository();
   }
@@ -175,13 +226,15 @@ export function App() {
       return;
     }
 
+    setSessionLayout(null);
     deleteDocument(deleteTarget.id);
     setDeleteTarget(null);
     refreshRepository();
   }
 
   function handleExport(document: DiagramDocument) {
-    downloadText(`${document.name || "cell-diagram"}.cell`, document.source);
+    const layout = document.id === activeDocument.id ? customLayout : null;
+    downloadText(`${document.name || "cell-diagram"}.cell`, serializePortableSource(document.source, layout));
   }
 
   function handleDeleteAndSaveShared(document: DiagramDocument) {
@@ -190,7 +243,8 @@ export function App() {
     }
 
     deleteDocument(document.id);
-    createDocument(pendingShare.name, pendingShare.source);
+    const created = createDocument(pendingShare.name, pendingShare.source);
+    setSessionLayout(created && pendingShare.layout ? { documentId: created.id, layout: pendingShare.layout } : null);
     setPendingShare(null);
     refreshRepository();
   }
@@ -215,10 +269,36 @@ export function App() {
       return;
     }
 
-    const source = await file.text();
-    createDocument(file.name.replace(/\.[^.]+$/, "") || "Imported Cell", source);
+    const portableSource = await file.text();
+    const { source, layout, layoutError } = parsePortableSource(portableSource);
+    const created = createDocument(file.name.replace(/\.[^.]+$/, "") || "Imported Cell", source);
+    setSessionLayout(created && layout ? { documentId: created.id, layout } : null);
+    if (layoutError) {
+      showCanvasMessage("info", "The imported manual layout could not be restored. Auto arrange was used instead.");
+    }
     event.target.value = "";
     refreshRepository();
+  }
+
+  function handleCustomLayoutChange(layout: CustomLayout) {
+    if (!customLayout) {
+      showCanvasMessage("warning", TEMPORARY_LAYOUT_WARNING, 5000);
+    }
+    setSessionLayout({ documentId: activeDocument.id, layout });
+  }
+
+  function handleSourceFocus() {
+    if (customLayout) {
+      showCanvasMessage("warning", TEMPORARY_LAYOUT_WARNING, 5000);
+    }
+  }
+
+  function handleAutoArrange() {
+    if (!customLayout) {
+      return;
+    }
+    setSessionLayout(null);
+    showCanvasMessage("info", "Components returned to automatic layout.");
   }
 
   return (
@@ -227,7 +307,17 @@ export function App() {
       data-layout-mode={isTabbedWorkbench ? "mobile" : "desktop"}
       data-mobile-tab={activeMobileTab}
     >
-      <DiagramCanvas model={visibleModel} insets={insets} fitKey={canvasFitKey} />
+      <DiagramCanvas
+        model={diagramModel}
+        insets={insets}
+        fitKey={canvasFitKey}
+        motionContextKey={activeDocument.id}
+        source={activeDocument.source}
+        customLayout={customLayout}
+        onCustomLayoutChange={handleCustomLayoutChange}
+        onAutoArrange={handleAutoArrange}
+        canvasMessage={canvasMessage}
+      />
 
       <div className="mobile-tab-bar" role="tablist" aria-label="Mobile workbench views">
         <button
@@ -256,6 +346,7 @@ export function App() {
           onDocumentNameChange={updateActiveName}
           source={activeDocument.source}
           onSourceChange={updateActiveSource}
+          onSourceFocus={handleSourceFocus}
           diagnostics={compiled.diagnostics}
           collapsed={editorCollapsed}
           onToggleCollapsed={handleEditorToggle}
@@ -265,7 +356,7 @@ export function App() {
       </div>
 
       <div className="overlay overlay--top-right">
-        <ShareButton source={activeDocument.source} />
+        <ShareButton source={serializePortableSource(activeDocument.source, customLayout)} />
         <HelpPanel />
         <div className="tooltip-control">
           <button
@@ -339,6 +430,7 @@ export function App() {
           </div>
         </Modal>
       ) : null}
+
     </main>
   );
 }

@@ -55,7 +55,7 @@ The generated destination and number of statements appear as helper text:
 
 The helper uses the actual generated identifier and statement count, with correct singular or plural wording. If `main` is already used, it displays `cell main-2`, then `cell main-3`, and so on until it finds an unused identifier.
 
-The primary action is labeled **Convert to multi-cell** and includes a right-arrow icon. It uses a filled, high-contrast orange treatment rather than an outlined secondary-button treatment, with clear hover and keyboard-focus states. The action spans the available card width on narrow mobile layouts.
+The primary action is labeled **Convert to multi-cell** and includes a right-arrow icon. It uses a filled, high-contrast blue treatment rather than an outlined secondary-button treatment. Blue distinguishes the constructive conversion action from the amber warning context and from destructive/error actions. It has clear hover and keyboard-focus states and spans the available card width on narrow mobile layouts.
 
 Selecting the action immediately replaces the editor source through the existing `onSourceChange` path. The normal compile and persistence flows then run against the converted source. There is no confirmation dialog because the action is explicit, local, and visible before it is applied.
 

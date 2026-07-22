@@ -45,15 +45,17 @@ This keeps the language concise and avoids a separate mode field that could cont
 
 When a multi-cell document contains convertible top-level cell statements, the diagnostics area shows one grouped recovery card:
 
-> **Mixed single-cell and multi-cell DSL**
+> **Complete multi-cell setup**
 >
-> This document contains components or local dependencies outside a cell block. Multi-cell documents require them to be inside a named cell.
+> You added a cell block, so the remaining loose DSL must be placed in its own cell.
 
-The card includes an action labeled:
+The generated destination and number of statements appear as helper text:
 
-> Move loose DSL into `cell main`
+> Creates `cell main` and moves 3 loose statements.
 
-The label uses the actual generated identifier. If `main` is already used, the action displays `cell main-2`, then `cell main-3`, and so on until it finds an unused identifier.
+The helper uses the actual generated identifier and statement count, with correct singular or plural wording. If `main` is already used, it displays `cell main-2`, then `cell main-3`, and so on until it finds an unused identifier.
+
+The primary action is labeled **Convert to multi-cell** and includes a right-arrow icon. It uses a filled, high-contrast orange treatment rather than an outlined secondary-button treatment, with clear hover and keyboard-focus states. The action spans the available card width on narrow mobile layouts.
 
 Selecting the action immediately replaces the editor source through the existing `onSourceChange` path. The normal compile and persistence flows then run against the converted source. There is no confirmation dialog because the action is explicit, local, and visible before it is applied.
 
@@ -96,7 +98,7 @@ The planner returns `null` when:
 
 ### Editor Integration
 
-The editor groups diagnostics with `code: "mixed-cell-mode"` into one recovery card. It asks the planner for the proposed conversion so the action can show the generated cell identifier. Selecting the action sends the proposal's `source` through the existing source-change callback.
+The editor groups diagnostics with `code: "mixed-cell-mode"` into one recovery card. It asks the planner for the proposed conversion so the helper text can show the generated cell identifier and moved-statement count. Selecting the action sends the proposal's `source` through the existing source-change callback.
 
 Individual diagnostics with other codes or no code continue to render normally. The raw mixed-mode diagnostics remain available to library consumers; grouping is a playground presentation decision.
 
@@ -176,7 +178,8 @@ The single-cell and multi-cell examples remain separate so users can see each va
 ### Playground Tests
 
 - Multiple mixed-mode diagnostics render as one recovery card.
-- The card displays the generated cell identifier in its action label.
+- The card displays the generated cell identifier and moved-statement count in its helper text.
+- The primary action is labeled "Convert to multi-cell" and exposes the same accessible name without including the decorative icon.
 - Other diagnostics continue to render alongside the card.
 - Selecting the action updates the source through the normal callback.
 - Recompilation clears mixed-mode diagnostics after a valid conversion.

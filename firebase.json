@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist",
+    "public": "apps/playground/dist",
     "predeploy": ["npm run build"],
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [

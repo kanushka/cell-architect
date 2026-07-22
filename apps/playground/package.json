@@ -1,0 +1,24 @@
+{
+  "name": "@cell-architect/playground",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@kanushka/cell-diagram-react": "*",
+    "@codemirror/language": "^6.12.4",
+    "@lezer/highlight": "^1.2.3",
+    "@uiw/react-codemirror": "^4.23.13",
+    "lucide-react": "^0.468.0",
+    "lz-string": "^1.5.0",
+    "nanoid": "^5.0.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

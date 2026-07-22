@@ -1,0 +1,25 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`wso2ToDsl — reference model > produces valid DSL that compiles without diagnostics 1`] = `
+"component Users api
+component Products api
+component Invoices api
+component Transactions api
+
+east oi as "Org Invoices" api
+
+south Firebase database
+south mysql as "MySQL DB" database
+
+north -> Users
+west -> Users
+west -> Invoices
+
+Users -> Products
+Users -> Firebase
+Products -> mysql
+Invoices -> oi
+Invoices -> Users
+Invoices -> mysql
+"
+`;

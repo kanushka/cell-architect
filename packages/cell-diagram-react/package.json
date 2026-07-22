@@ -1,0 +1,40 @@
+{
+  "name": "@kanushka/cell-diagram-react",
+  "version": "0.1.1",
+  "description": "React component and DSL for rendering cell architecture diagrams",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kanushka/cell-architect.git",
+    "directory": "packages/cell-diagram-react"
+  },
+  "homepage": "https://github.com/kanushka/cell-architect#readme",
+  "bugs": { "url": "https://github.com/kanushka/cell-architect/issues" },
+  "type": "module",
+  "sideEffects": ["*.css"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./style.css": "./dist/style.css"
+  },
+  "files": ["dist", "LICENSE"],
+  "publishConfig": { "access": "public" },
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@dagrejs/dagre": "^1.1.5",
+    "@xyflow/react": "^12.8.4",
+    "html-to-image": "^1.11.13",
+    "lz-string": "^1.5.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1 || ^19.0.0",
+    "react-dom": "^18.3.1 || ^19.0.0"
+  }
+}

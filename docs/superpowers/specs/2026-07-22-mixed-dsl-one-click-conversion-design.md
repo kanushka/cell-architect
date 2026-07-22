@@ -55,7 +55,7 @@ The generated destination and number of statements appear as helper text:
 
 The helper uses the actual generated identifier and statement count, with correct singular or plural wording. If `main` is already used, it displays `cell main-2`, then `cell main-3`, and so on until it finds an unused identifier.
 
-The primary action is labeled **Convert to multi-cell** and includes a right-arrow icon. It uses a filled, high-contrast blue treatment rather than an outlined secondary-button treatment. Blue distinguishes the constructive conversion action from the amber warning context and from destructive/error actions. It has clear hover and keyboard-focus states and spans the available card width on narrow mobile layouts.
+The action is labeled **Convert to multi-cell** and includes a right-arrow icon. It reuses the same shared neutral `pill-button` treatment as the Share and Diagrams controls: white background, standard border, dark text, rounded corners, and the existing control shadow. Reusing the shared class keeps the action consistent with the rest of the application and prevents recovery-specific button styling from drifting. It spans the available card width on narrow mobile layouts.
 
 Selecting the action immediately replaces the editor source through the existing `onSourceChange` path. The normal compile and persistence flows then run against the converted source. There is no confirmation dialog because the action is explicit, local, and visible before it is applied.
 
@@ -179,7 +179,7 @@ The single-cell and multi-cell examples remain separate so users can see each va
 
 - Multiple mixed-mode diagnostics render as one recovery card.
 - The card displays the generated cell identifier and moved-statement count in its helper text.
-- The primary action is labeled "Convert to multi-cell" and exposes the same accessible name without including the decorative icon.
+- The action is labeled "Convert to multi-cell", uses the shared `pill-button` class, and exposes the same accessible name without including the decorative icon.
 - Other diagnostics continue to render alongside the card.
 - Selecting the action updates the source through the normal callback.
 - Recompilation clears mixed-mode diagnostics after a valid conversion.

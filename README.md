@@ -1,4 +1,4 @@
-<img src="public/logo.svg" alt="Cell Architect logo" width="48" height="48" />
+<img src="apps/playground/public/logo.svg" alt="Cell Architect logo" width="48" height="48" />
 
 # Cell Architect
 

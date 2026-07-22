@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { serializePortableSource } from "@kanushka/cell-diagram-react";
 import { encodeShareSource } from "../share/shareLink";
+import { STORAGE_KEY } from "../storage/documentRepository";
 import { App } from "./App";
 
 function mockMobileLayout(matches: boolean) {
@@ -64,6 +65,42 @@ describe("App", () => {
       screen.getByText("Unknown statement. Expected title, version, component, or dependency arrow.")
     ).toBeInTheDocument();
     expect(screen.queryByText("Fix the DSL errors to render the diagram.")).not.toBeInTheDocument();
+  });
+
+  it("converts mixed DSL in one click, persists it, and clears the recovery diagnostic", async () => {
+    const user = userEvent.setup();
+    const timestamp = "2026-07-22T00:00:00.000Z";
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        schemaVersion: 1,
+        activeDocumentId: "mixed",
+        documents: [
+          {
+            id: "mixed",
+            name: "Mixed DSL",
+            source: "component loose\ncell existing {\n  component api\n}",
+            createdAt: timestamp,
+            updatedAt: timestamp
+          }
+        ]
+      })
+    );
+    render(<App />);
+
+    expect(screen.getByRole("region", { name: "Complete multi-cell setup" })).toHaveTextContent(
+      "Creates cell main and moves 1 loose statement."
+    );
+    await user.click(screen.getByRole("button", { name: "Convert to multi-cell" }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Convert to multi-cell" })).not.toBeInTheDocument();
+    });
+    expect(screen.getByText("No parser issues. The diagram is generated from this source.")).toBeInTheDocument();
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+    expect(stored.documents[0].source).toBe(
+      "cell main {\n  component loose\n}\n\ncell existing {\n  component api\n}"
+    );
   });
 
   it("collapses and expands the editor panel", async () => {

@@ -4,6 +4,7 @@ export type EdgeKind = "internal" | "inbound" | "outbound" | "exposure";
 
 export interface Diagnostic {
   severity: "error";
+  code?: string;
   message: string;
   line: number;
   column: number;

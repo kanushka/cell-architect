@@ -1,5 +1,10 @@
 import { useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { Diagnostic } from "@kanushka/cell-diagram-react";
+import {
+  Diagnostic,
+  MIXED_CELL_MODE_DIAGNOSTIC_CODE,
+  planMixedDslConversion
+} from "@kanushka/cell-diagram-react";
+import { ArrowRight } from "lucide-react";
 import { CodeHideIcon, CodeShowIcon } from "./EditorIcons";
 import {
   clamp,
@@ -45,6 +50,13 @@ export function EditorPanel({
 }: EditorPanelProps) {
   const [height, setHeight] = useState(EDITOR_DEFAULT_HEIGHT);
   const dragStateRef = useRef<DragState | null>(null);
+  const mixedModeDiagnostics = diagnostics.filter(
+    (diagnostic) => diagnostic.code === MIXED_CELL_MODE_DIAGNOSTIC_CODE
+  );
+  const conversion = mixedModeDiagnostics.length > 0 ? planMixedDslConversion(source) : null;
+  const visibleDiagnostics = conversion
+    ? diagnostics.filter((diagnostic) => diagnostic.code !== MIXED_CELL_MODE_DIAGNOSTIC_CODE)
+    : diagnostics;
 
   function handleResizeMove(event: MouseEvent) {
     const dragState = dragStateRef.current;
@@ -124,14 +136,34 @@ export function EditorPanel({
         {diagnostics.length === 0 ? (
           <p>No parser issues. The diagram is generated from this source.</p>
         ) : (
-          diagnostics.map((diagnostic) => (
-            <p key={`${diagnostic.line}-${diagnostic.column}-${diagnostic.message}`}>
-              <strong>
-                Line {diagnostic.line}, col {diagnostic.column}
-              </strong>
-              {diagnostic.message}
-            </p>
-          ))
+          <>
+            {conversion ? (
+              <section className="editor-panel__recovery" aria-label="Complete multi-cell setup">
+                <strong>Complete multi-cell setup</strong>
+                <p>You added a cell block, so the remaining loose DSL must be placed in its own cell.</p>
+                <p className="editor-panel__recovery-helper">
+                  Creates <code>cell {conversion.cellId}</code> and moves {conversion.movedLineCount} loose{" "}
+                  {conversion.movedLineCount === 1 ? "statement" : "statements"}.
+                </p>
+                <button
+                  type="button"
+                  className="pill-button editor-panel__recovery-action"
+                  onClick={() => onSourceChange(conversion.source)}
+                >
+                  <span>Convert to multi-cell</span>
+                  <ArrowRight size={15} aria-hidden="true" />
+                </button>
+              </section>
+            ) : null}
+            {visibleDiagnostics.map((diagnostic) => (
+              <p key={`${diagnostic.line}-${diagnostic.column}-${diagnostic.message}`}>
+                <strong>
+                  Line {diagnostic.line}, col {diagnostic.column}
+                </strong>
+                {diagnostic.message}
+              </p>
+            ))}
+          </>
         )}
       </div>
       <div

@@ -1,5 +1,5 @@
 import { CrossEntry, CrossExit, Diagnostic, ParsedCellDocument } from "../domain/cellModel";
-import { parseCellDsl } from "./parseCellDsl";
+import { isCellDslStatement, parseCellDsl } from "./parseCellDsl";
 import { CellBlock, SourceLine, splitCells } from "./splitCells";
 import { ParsedCrossEdge, parseCrossEdge } from "./crossEdge";
 
@@ -31,6 +31,20 @@ export interface ParsedProject {
 export interface ParseProjectResult {
   project: ParsedProject;
   diagnostics: Diagnostic[];
+}
+
+export const MIXED_CELL_MODE_DIAGNOSTIC_CODE = "mixed-cell-mode";
+export const MIXED_CELL_MODE_MESSAGE =
+  "This document uses cell blocks. Components and local dependencies must be inside a named cell.";
+
+function mixedCellModeDiagnostic(line: number): Diagnostic {
+  return {
+    severity: "error",
+    code: MIXED_CELL_MODE_DIAGNOSTIC_CODE,
+    message: MIXED_CELL_MODE_MESSAGE,
+    line,
+    column: 1
+  };
 }
 
 function crossEdgeId(sourceCell: string, sourceComp: string, targetCell: string, targetComp: string, line: number) {
@@ -118,23 +132,22 @@ export function parseProject(source: string): ParseProjectResult {
     }
     if (cross) {
       if (!cross.sourceCell) {
-        diagnostics.push({
-          severity: "error",
-          message: "A cross-cell edge outside a cell block must use a qualified source, e.g. `a.x -> b.y`.",
-          line: cross.line,
-          column: 1
-        });
+        diagnostics.push(mixedCellModeDiagnostic(cross.line));
         return;
       }
       crossEdges.push(buildResolvedEdge(cross, cross.sourceCell));
       return;
     }
-    diagnostics.push({
-      severity: "error",
-      message: "Only `title`, comments, and cross-cell edges are allowed outside a cell block.",
-      line: entry.line,
-      column: 1
-    });
+    diagnostics.push(
+      isCellDslStatement(entry.text)
+        ? mixedCellModeDiagnostic(entry.line)
+        : {
+            severity: "error",
+            message: "Only `title`, comments, and cross-cell edges are allowed outside a cell block.",
+            line: entry.line,
+            column: 1
+          }
+    );
   });
 
   return { project: { title, cells, crossEdges }, diagnostics };

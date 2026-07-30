@@ -1,0 +1,10 @@
+cell checkout as "Checkout Cell" {
+  component api as "Checkout API" api
+}
+
+cell loyalty as "Loyalty Cell" {
+  component points as "Points Service" service
+}
+
+checkout.api -> loyalty.points : burn points
+loyalty.points -> south-north checkout.api : order totals

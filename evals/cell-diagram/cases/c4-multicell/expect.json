@@ -1,0 +1,31 @@
+{
+  "title": "Multi-cell project with cross-cell link and shared external",
+  "checks": [
+    { "kind": "cellCount", "n": 2, "desc": "two cell blocks" },
+    { "kind": "projectTitle", "pattern": "storefront", "desc": "project-level title set" },
+    { "kind": "cellLabel", "pattern": "order cell", "desc": "orders cell has the quoted alias label" },
+    { "kind": "cellVersion", "pattern": "v2", "desc": "orders cell version v2" },
+    {
+      "kind": "crossEdgeCount",
+      "min": 1,
+      "desc": "orders -> products expressed as a cross-cell link, not a plain arrow"
+    },
+    {
+      "kind": "crossEdgeMode",
+      "mode": "connected",
+      "min": 1,
+      "desc": "acyclic dependency uses connected (east) mode"
+    },
+    {
+      "kind": "sharedExternal",
+      "pattern": "s3",
+      "minCells": 2,
+      "desc": "S3 declared on a boundary of BOTH cells so it renders as one shared node"
+    },
+    {
+      "kind": "noExternalMatching",
+      "pattern": "orderdb|order-db|catalogdb|catalog-db",
+      "desc": "each cell's own database stays inside its cell"
+    }
+  ]
+}

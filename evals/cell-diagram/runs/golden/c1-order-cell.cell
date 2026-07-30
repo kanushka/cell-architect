@@ -1,0 +1,19 @@
+title OrderCell
+version v1
+
+component WebApp web-app
+component OrderAPI api
+component OrderService service
+component OrderDB database
+component ep as "Event Publisher" event
+
+north CustomerApp as "Customer Web" webapp
+
+CustomerApp -> WebApp : HTTPS
+
+WebApp -> OrderAPI
+OrderAPI -> OrderService
+OrderService -> OrderDB
+OrderService -> ep : order.created
+
+OrderService -> south Stripe : payment

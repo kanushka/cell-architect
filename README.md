@@ -125,6 +125,28 @@ north -> orders
 
 For full notation details, see the [DSL guide](docs/dsl-guide.md).
 
+## Agent skill
+
+If you write `.cell` documents with a coding agent, install the skill so the agent knows the
+notation and where things belong on a cell boundary:
+
+```bash
+npx skills add kanushka/cell-architect --skill cell-diagram
+```
+
+It works with Claude Code, Codex, opencode and anything else `npx skills` supports — pass
+`-a <agent>` to target one, or `--list` to see what this repo ships. The skill lives in
+[`skills/cell-diagram`](skills/cell-diagram) and is self-contained: it carries the grammar, so it
+works in a project that has nothing else from this repo.
+
+The skill is evaluated rather than assumed to work. [`evals/cell-diagram`](evals/cell-diagram/README.md)
+holds prose architecture briefs, the documents agents produced for them, and a scorer that compiles
+each one and checks placement:
+
+```bash
+npx vitest run evals/cell-diagram/score.test.ts
+```
+
 ## Storage and privacy
 
 Cell Architect has no backend. There is no account, no telemetry, and no diagram data ever leaves your machine:
@@ -152,6 +174,9 @@ apps/playground               Browser workbench app that showcases the library
   src/app                     React app shell, editor, and styles
   src/storage                 Local document repository and default sample
   src/share                   Diagram import/export and sharing
+
+skills/cell-diagram           Agent skill, installable with `npx skills add`
+evals/cell-diagram            Briefs, recorded agent runs, and the scorer for that skill
 
 docs                          DSL guide, requirements, and design history
   dsl-guide.md                Full notation reference

@@ -1,0 +1,35 @@
+{
+  "title": "Single cell from prose",
+  "checks": [
+    { "kind": "cellCount", "n": 1, "desc": "one cell" },
+    { "kind": "componentMatching", "pattern": "web", "desc": "web app is an internal component" },
+    { "kind": "componentMatching", "pattern": "order", "desc": "order service/api is internal" },
+    {
+      "kind": "componentMatching",
+      "pattern": "db|database|postgres|datastore|store",
+      "desc": "the cell-owned datastore is INSIDE the cell"
+    },
+    {
+      "kind": "noExternalMatching",
+      "pattern": "db|database|postgres|datastore",
+      "desc": "the cell-owned datastore must NOT be placed on a boundary"
+    },
+    {
+      "kind": "componentMatching",
+      "pattern": "event|publisher|ep\\b",
+      "desc": "event publisher is internal"
+    },
+    {
+      "kind": "inboundOn",
+      "direction": "north",
+      "desc": "public internet reaches the cell through north — as a named external OR a bare gateway exposure, both are defensible when the consumer is an anonymous population"
+    },
+    {
+      "kind": "externalOn",
+      "direction": "south",
+      "pattern": "stripe",
+      "desc": "Stripe (third-party SaaS) sits on south"
+    },
+    { "kind": "edgeKind", "edgeKind": "internal", "min": 3, "desc": "internal wiring present" }
+  ]
+}

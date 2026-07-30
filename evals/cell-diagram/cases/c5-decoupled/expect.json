@@ -1,0 +1,19 @@
+{
+  "title": "Cyclic cell dependency needs a decoupled cross-cell link",
+  "checks": [
+    { "kind": "cellCount", "n": 2, "desc": "two cell blocks" },
+    { "kind": "crossEdgeCount", "min": 2, "desc": "both directions expressed as cross-cell links" },
+    {
+      "kind": "crossEdgeMode",
+      "mode": "decoupled",
+      "min": 1,
+      "desc": "one direction uses decoupled mode (south exit) to break the cycle"
+    },
+    {
+      "kind": "crossEdgeMode",
+      "mode": "connected",
+      "min": 1,
+      "desc": "the other direction stays connected"
+    }
+  ]
+}

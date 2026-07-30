@@ -1,0 +1,9 @@
+title SearchCell
+
+component searchApi as "Search API" api
+component indexer as "Indexer" worker
+component indexStore as "Index Store" database
+
+north -> searchApi
+indexer -> indexStore : read
+indexer -> east : push documents

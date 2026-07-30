@@ -1,0 +1,39 @@
+name: Feature request
+description: Suggest a capability, or an addition to the Cell DSL
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cell Architect deliberately keeps a small surface area. The most useful proposals
+        explain the architecture-diagramming problem behind the request, not just the
+        feature — that usually leads to a better fit than the first idea.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: What are you attempting to draw or express that is awkward or impossible today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to see?
+      description: If this adds DSL notation, show how you would want to write it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you have considered
+      description: Including any workaround you are using now.
+
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: Compatibility
+      options:
+        - label: This change would keep existing `.cell` files and share links working, as far as I can tell

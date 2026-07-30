@@ -71,6 +71,8 @@ sure all of it passes locally before opening a pull request.
    separate formatter, so follow the conventions of the file you are editing.
 5. Update the docs when behavior changes — most importantly
    [`docs/dsl-guide.md`](docs/dsl-guide.md) for anything touching the notation.
+6. Add an entry under `Unreleased` in [CHANGELOG.md](CHANGELOG.md) for anything a user or a
+   library consumer would notice. Internal refactors and test-only changes do not need one.
 
 ### Changing the DSL
 
@@ -100,9 +102,11 @@ until CI is green.
 
 Maintainers only. The library publishes to npm from a tag-triggered workflow:
 
-1. Bump `version` in `packages/cell-diagram-react/package.json`.
-2. Commit the bump and update `CHANGELOG.md`.
-3. Tag the commit `vX.Y.Z`, matching the new version exactly, and push the tag.
+1. Move the `Unreleased` entries in [CHANGELOG.md](CHANGELOG.md) under the new version
+   heading, and update the comparison links at the bottom of the file.
+2. Bump `version` in `packages/cell-diagram-react/package.json`.
+3. Commit both, then tag the commit `vX.Y.Z`, matching the new version exactly, and push
+   the tag.
 
 [`release.yml`](.github/workflows/release.yml) verifies the tag matches the package version,
 then publishes with npm provenance.

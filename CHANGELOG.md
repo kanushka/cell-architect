@@ -33,6 +33,8 @@ listed under the release they went out with, marked **(app)**.
 
 ### Fixed
 
+- **(app)** A share link opened while an earlier prompt or error was still on screen left
+  both dialogs mounted at once. A new link now replaces whatever was showing.
 - `constrainSharedExternal` exits once a settle pass stops moving a node instead of always
   running its full `O(cells²)` loop. It runs per node during layout, so the cost compounded.
 - Corrected the package README: the `diagram.css` link pointed into `src/`, which is not

@@ -119,6 +119,13 @@ export function App() {
       }
 
       clearShareUrl();
+
+      // A hash-only change does not reload the SPA, so a second link can arrive
+      // while an earlier prompt or error is still on screen. Clear both up front
+      // so the new link replaces whatever was showing rather than stacking on it.
+      setPendingShare(null);
+      setImportError(null);
+
       const decoded = decodeShareSource(param);
 
       if (!decoded.ok) {

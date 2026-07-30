@@ -307,6 +307,33 @@ describe("App", () => {
 
       expect(await screen.findByRole("dialog", { name: "Share link error" })).toBeInTheDocument();
     });
+
+    it("replaces an open prompt when a second link arrives instead of stacking dialogs", async () => {
+      location.hash = `#s=${encodeShareSource(sharedSource)}`;
+      render(<App />);
+      expect(await screen.findByRole("dialog", { name: "Open shared diagram" })).toBeInTheDocument();
+
+      // A hash-only change does not reload the SPA, so pasting another share
+      // link while the prompt is open goes through the hashchange listener.
+      location.hash = "#s=@@@not-valid@@@";
+      fireEvent(window, new HashChangeEvent("hashchange"));
+
+      expect(await screen.findByRole("dialog", { name: "Share link error" })).toBeInTheDocument();
+      expect(screen.getAllByRole("dialog")).toHaveLength(1);
+      expect(screen.queryByRole("dialog", { name: "Open shared diagram" })).not.toBeInTheDocument();
+    });
+
+    it("replaces an open error when a valid link arrives", async () => {
+      location.hash = "#s=@@@not-valid@@@";
+      render(<App />);
+      expect(await screen.findByRole("dialog", { name: "Share link error" })).toBeInTheDocument();
+
+      location.hash = `#s=${encodeShareSource(sharedSource)}`;
+      fireEvent(window, new HashChangeEvent("hashchange"));
+
+      expect(await screen.findByRole("dialog", { name: "Open shared diagram" })).toBeInTheDocument();
+      expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    });
   });
 
   it("shows the help popover with the repo link", async () => {

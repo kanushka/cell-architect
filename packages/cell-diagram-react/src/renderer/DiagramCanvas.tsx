@@ -20,13 +20,17 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import "./diagram.css";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ProjectModel } from "../domain/cellModel";
 import { FitScreenIcon, ZoomInIcon, ZoomOutIcon } from "../ui/ControlIcons";
 // TODO: re-enable when the PNG/SVG image export feature is complete.
 // import { exportPng, exportSvg } from "./exportImage";
 import { applyCustomLayout, captureCustomPosition, type CustomLayout } from "./customLayout";
-import { classifyDiagramMotion, type DiagramMotionSnapshot } from "./diagramMotion";
+import {
+  classifyDiagramMotion,
+  type DiagramMotionClassification,
+  type DiagramMotionSnapshot
+} from "./diagramMotion";
 import { getFloatingAnchors, shapeForNodeType, type NodeRect } from "./floatingGeometry";
 import { toReactFlow } from "./flowLayout";
 import { connectionIdsForNode, edgeConnectionId, highlightedNodeIdsForConnections } from "./highlightModel";
@@ -258,6 +262,22 @@ const FIT_VIEW_VERTICAL_PADDING: `${number}px` = "112px";
 const FIT_VIEW_LEFT_PADDING = 112;
 const MOTION_SETTLE_MS = 420;
 
+const NO_MOTION_IDS: ReadonlySet<string> = new Set<string>();
+
+function idleMotion(): DiagramMotionClassification {
+  return classifyDiagramMotion(null, [], [], "");
+}
+
+// Drop the entering marks once the animation has had time to play, leaving the
+// snapshot alone so the next structural change still compares against it.
+function settleMotion(current: DiagramMotionClassification): DiagramMotionClassification {
+  return {
+    ...current,
+    enteringNodeIds: NO_MOTION_IDS as Set<string>,
+    enteringEdgeIds: NO_MOTION_IDS as Set<string>
+  };
+}
+
 interface FitPadding {
   top: `${number}px`;
   bottom: `${number}px`;
@@ -403,7 +423,7 @@ export function DiagramCanvas({
   theme = "light"
 }: DiagramCanvasProps) {
   const [activeConnectionIds, setActiveConnectionIds] = useState<string[]>([]);
-  const [, setMotionVersion] = useState(0);
+  const [motion, setMotion] = useState<DiagramMotionClassification>(idleMotion);
   const previousMotionSnapshot = useRef<DiagramMotionSnapshot | null>(null);
   const flow = useMemo<ReturnType<typeof toReactFlow>>(
     () => (model ? toReactFlow(model) : { nodes: [], edges: [], cellSize: { width: 0, height: 0 } }),
@@ -412,12 +432,6 @@ export function DiagramCanvas({
   const positionedNodes = useMemo(() => applyCustomLayout(flow.nodes, customLayout), [customLayout, flow.nodes]);
   const [dragNodes, setDragNodes] = useState<Node[] | null>(null);
   const liveNodes = dragNodes ?? positionedNodes;
-  const motion = classifyDiagramMotion(
-    previousMotionSnapshot.current,
-    positionedNodes,
-    flow.edges,
-    motionContextKey
-  );
   const activeConnectionIdSet = useMemo(() => new Set(activeConnectionIds), [activeConnectionIds]);
   const highlightedNodeIds = useMemo(() => {
     if (activeConnectionIdSet.size === 0) {
@@ -476,18 +490,34 @@ export function DiagramCanvas({
     [activeConnectionIdSet, flow.edges, isFocusView, motion.enteringEdgeIds]
   );
 
-  useEffect(() => {
-    previousMotionSnapshot.current = motion.snapshot;
-  }, [flow.edges, motion.snapshot, motionContextKey, positionedNodes]);
+  // Classify motion against the previous snapshot after the structure changes,
+  // rather than while rendering. Reading the snapshot during render made the
+  // output depend on a value React cannot track, so a re-render triggered by
+  // anything else -- focusing a component, say -- recomputed motion against an
+  // already-updated snapshot and cut the animation short.
+  //
+  // This runs as a layout effect so the entering classes are applied before the
+  // browser paints, which is what keeps new nodes animating in rather than
+  // appearing and then animating.
+  useLayoutEffect(() => {
+    const next = classifyDiagramMotion(
+      previousMotionSnapshot.current,
+      positionedNodes,
+      flow.edges,
+      motionContextKey
+    );
+    previousMotionSnapshot.current = next.snapshot;
+    setMotion(next);
+  }, [flow.edges, motionContextKey, positionedNodes]);
 
   useEffect(() => {
     if (motion.enteringNodeIds.size === 0 && motion.enteringEdgeIds.size === 0) {
       return;
     }
 
-    const settleTimer = window.setTimeout(() => setMotionVersion((current) => current + 1), MOTION_SETTLE_MS);
+    const settleTimer = window.setTimeout(() => setMotion(settleMotion), MOTION_SETTLE_MS);
     return () => window.clearTimeout(settleTimer);
-  }, [motion.enteringEdgeIds, motion.enteringNodeIds]);
+  }, [motion]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {

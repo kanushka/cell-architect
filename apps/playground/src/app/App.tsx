@@ -175,11 +175,16 @@ export function App() {
     repository.documents.find((document) => document.id === repository.activeDocumentId) ?? repository.documents[0];
   const customLayout = sessionLayout?.documentId === activeDocument.id ? sessionLayout.layout : null;
   const compiled = useMemo(() => compileProject(activeDocument.source), [activeDocument.source]);
-  const lastValidModel = useRef(compiled.model);
-  if (compiled.model) {
-    lastValidModel.current = compiled.model;
+  // Half-typed DSL stops compiling constantly, so the canvas keeps showing the
+  // last model that did compile instead of blanking. Held as state and adjusted
+  // during render, which React supports, rather than in a ref -- a ref written
+  // and read while rendering is not tracked, so the canvas could keep a stale
+  // model after a re-render it did not cause.
+  const [lastValidModel, setLastValidModel] = useState(compiled.model);
+  if (compiled.model && compiled.model !== lastValidModel) {
+    setLastValidModel(compiled.model);
   }
-  const visibleModel = compiled.model ?? lastValidModel.current;
+  const visibleModel = compiled.model ?? lastValidModel;
   const diagramModel = useDebouncedValue(visibleModel, DIAGRAM_MODEL_DEBOUNCE_MS, activeDocument.id);
   const isAtDocumentLimit = repository.documents.length >= MAX_DOCUMENTS;
   const insets = computeCanvasInsets({

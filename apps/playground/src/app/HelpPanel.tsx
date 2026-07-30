@@ -1,5 +1,6 @@
-import { Github, HelpCircle, X } from "lucide-react";
+import { HelpCircle, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { GithubIcon } from "./EditorIcons";
 import { useClickOutside } from "./useClickOutside";
 
 const REPO_URL = "https://github.com/kanushka/cell-architect";
@@ -26,7 +27,7 @@ export function HelpPanel() {
         <div className="help-panel__popover" role="dialog" aria-label="About Cell Architect">
           <p className="help-panel__lede">Cell Architect is open source.</p>
           <a className="help-panel__link" href={REPO_URL} target="_blank" rel="noreferrer">
-            <Github size={15} />
+            <GithubIcon size={15} />
             <span>View on GitHub</span>
           </a>
           <p className="help-panel__note">

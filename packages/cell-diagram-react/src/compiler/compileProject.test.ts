@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compileProject } from "./compileProject";
+import { compileProject, MAX_DIAGRAM_NODES } from "./compileProject";
 
 describe("compileProject", () => {
   it("wraps a single-cell document in a one-cell ProjectModel", () => {
@@ -51,5 +51,36 @@ describe("compileProject", () => {
   it("keeps cell version and label", () => {
     const result = compileProject("cell orders as \"Order Cell\" {\n  version v2\n  component api\n}");
     expect(result.model?.cells[0]).toMatchObject({ id: "orders", label: "Order Cell", version: "v2" });
+  });
+
+  describe("node limit", () => {
+    // One implicit cell node, so `count` components lands the total at count + 1.
+    const sourceWithComponents = (count: number) =>
+      Array.from({ length: count }, (_, index) => `component c${index} service`).join("\n");
+
+    it("compiles a diagram at the node limit", () => {
+      const result = compileProject(sourceWithComponents(MAX_DIAGRAM_NODES - 1));
+      expect(result.diagnostics).toEqual([]);
+      expect(result.model).not.toBeNull();
+    });
+
+    it("refuses a diagram past the node limit instead of trying to lay it out", () => {
+      const result = compileProject(sourceWithComponents(MAX_DIAGRAM_NODES + 500));
+
+      expect(result.model).toBeNull();
+      expect(result.diagnostics).toHaveLength(1);
+      expect(result.diagnostics[0]).toMatchObject({ severity: "error", line: 1 });
+      expect(result.diagnostics[0].message).toMatch(/node limit/i);
+    });
+
+    it("counts externals and shared externals toward the limit", () => {
+      const half = Math.ceil(MAX_DIAGRAM_NODES / 2);
+      const components = Array.from({ length: half }, (_, i) => `component c${i} service`);
+      const externals = Array.from({ length: half }, (_, i) => `north e${i} webapp`);
+      const result = compileProject([...components, ...externals].join("\n"));
+
+      expect(result.model).toBeNull();
+      expect(result.diagnostics[0].message).toMatch(/node limit/i);
+    });
   });
 });

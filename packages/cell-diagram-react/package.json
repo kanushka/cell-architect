@@ -13,6 +13,9 @@
     "url": "https://github.com/kanushka/cell-architect/issues"
   },
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "sideEffects": [
     "*.css"
   ],

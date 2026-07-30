@@ -205,6 +205,7 @@ describe("App", () => {
   });
 
   it("restores a shared manual layout and resets it on the first DSL edit", async () => {
+    const user = userEvent.setup();
     const source = "title Shared\ncomponent API service";
     const portable = serializePortableSource(source, {
       version: 1,
@@ -214,6 +215,8 @@ describe("App", () => {
     location.hash = `#s=${encodeShareSource(portable)}`;
 
     render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Add to my diagrams" }));
 
     const autoArrange = await screen.findByRole("button", { name: "Auto arrange components" });
     await waitFor(() => expect(autoArrange).toBeEnabled());
@@ -230,6 +233,107 @@ describe("App", () => {
     expect(screen.getByText("Manual layout reset after DSL change.")).toBeInTheDocument();
     expect(screen.queryByText(/Manual arrangement is temporary/)).not.toBeInTheDocument();
     expect(document.querySelectorAll(".canvas-notification")).toHaveLength(1);
+  });
+
+  describe("opening a share link", () => {
+    const sharedSource = "title FromALink\ncomponent API service";
+
+    function savedDocumentNames() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}").documents.map(
+        (document: { name: string }) => document.name
+      );
+    }
+
+    it("asks before saving a shared diagram and previews what the link contains", async () => {
+      location.hash = `#s=${encodeShareSource(sharedSource)}`;
+
+      render(<App />);
+
+      expect(await screen.findByRole("dialog", { name: "Open shared diagram" })).toBeInTheDocument();
+      expect(screen.getByLabelText("Preview of FromALink")).toHaveTextContent("component API service");
+      // Nothing is written to the library until the visitor agrees.
+      expect(savedDocumentNames()).not.toContain("FromALink");
+    });
+
+    it("saves the shared diagram once accepted", async () => {
+      const user = userEvent.setup();
+      location.hash = `#s=${encodeShareSource(sharedSource)}`;
+
+      render(<App />);
+      await user.click(await screen.findByRole("button", { name: "Add to my diagrams" }));
+
+      await waitFor(() => expect(savedDocumentNames()).toContain("FromALink"));
+      expect(screen.queryByRole("dialog", { name: "Open shared diagram" })).not.toBeInTheDocument();
+    });
+
+    it("discards the shared diagram when declined", async () => {
+      const user = userEvent.setup();
+      location.hash = `#s=${encodeShareSource(sharedSource)}`;
+
+      render(<App />);
+      await user.click(await screen.findByRole("button", { name: "Cancel" }));
+
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog", { name: "Open shared diagram" })).not.toBeInTheDocument()
+      );
+      expect(savedDocumentNames()).not.toContain("FromALink");
+    });
+
+    it("rejects a link that expands past the source size limit", async () => {
+      location.hash = `#s=${encodeShareSource("component c service\n".repeat(20_000))}`;
+
+      render(<App />);
+
+      expect(await screen.findByRole("dialog", { name: "Share link too large" })).toBeInTheDocument();
+      expect(screen.queryByRole("dialog", { name: "Open shared diagram" })).not.toBeInTheDocument();
+    });
+
+    it("rejects a link whose diagram exceeds the node limit", async () => {
+      const tooManyNodes = Array.from({ length: 1200 }, (_, i) => `component c${i} service`).join("\n");
+      location.hash = `#s=${encodeShareSource(tooManyNodes)}`;
+
+      render(<App />);
+
+      expect(
+        await screen.findByRole("dialog", { name: "Shared diagram could not be opened" })
+      ).toBeInTheDocument();
+      expect(screen.getByText(/node limit/i)).toBeInTheDocument();
+    });
+
+    it("reports a corrupted link", async () => {
+      location.hash = "#s=@@@not-valid@@@";
+
+      render(<App />);
+
+      expect(await screen.findByRole("dialog", { name: "Share link error" })).toBeInTheDocument();
+    });
+
+    it("replaces an open prompt when a second link arrives instead of stacking dialogs", async () => {
+      location.hash = `#s=${encodeShareSource(sharedSource)}`;
+      render(<App />);
+      expect(await screen.findByRole("dialog", { name: "Open shared diagram" })).toBeInTheDocument();
+
+      // A hash-only change does not reload the SPA, so pasting another share
+      // link while the prompt is open goes through the hashchange listener.
+      location.hash = "#s=@@@not-valid@@@";
+      fireEvent(window, new HashChangeEvent("hashchange"));
+
+      expect(await screen.findByRole("dialog", { name: "Share link error" })).toBeInTheDocument();
+      expect(screen.getAllByRole("dialog")).toHaveLength(1);
+      expect(screen.queryByRole("dialog", { name: "Open shared diagram" })).not.toBeInTheDocument();
+    });
+
+    it("replaces an open error when a valid link arrives", async () => {
+      location.hash = "#s=@@@not-valid@@@";
+      render(<App />);
+      expect(await screen.findByRole("dialog", { name: "Share link error" })).toBeInTheDocument();
+
+      location.hash = `#s=${encodeShareSource(sharedSource)}`;
+      fireEvent(window, new HashChangeEvent("hashchange"));
+
+      expect(await screen.findByRole("dialog", { name: "Open shared diagram" })).toBeInTheDocument();
+      expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    });
   });
 
   it("shows the help popover with the repo link", async () => {

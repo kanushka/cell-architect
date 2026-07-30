@@ -13,3 +13,4 @@ vite.config.d.ts
 .superpowers/
 .worktrees/
 .playwright-mcp/
+.claude/worktrees/

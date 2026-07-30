@@ -133,6 +133,10 @@ Cell Architect has no backend. There is no account, no telemetry, and no diagram
 - Share links carry the compressed DSL in the URL fragment (`#s=…`), which browsers never send to a server.
 - Export important diagrams as `.cell` files before clearing browser data or switching machines.
 
+Opening a share link always asks before saving anything, and shows you the diagram source
+first — following a link is not consent to have a diagram added to your library. Diagrams
+are capped at 1000 nodes so that an oversized source cannot lock up the browser.
+
 ## Project Structure
 
 ```text
@@ -149,15 +153,25 @@ apps/playground               Browser workbench app that showcases the library
   src/storage                 Local document repository and default sample
   src/share                   Diagram import/export and sharing
 
-docs                          DSL guide and specs
+docs                          DSL guide, requirements, and design history
+  dsl-guide.md                Full notation reference
+  requirements.md             What the project is and is not trying to be
+  superpowers/                Design specs and implementation plans, kept as a record
 .github/workflows             CI and release workflows
 ```
+
+Every feature was designed before it was built, and those write-ups are kept in
+[`docs/superpowers`](docs/superpowers/README.md). They explain why things are the way they
+are, which is worth reading before proposing a change. They are historical records, though —
+where a document and the code disagree, the code is correct.
 
 See `packages/cell-diagram-react/README.md` for library install and usage instructions.
 
 ## Contributing
 
 Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the development setup, the checks CI runs, and how changes are reviewed. By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+Release history is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Security
 

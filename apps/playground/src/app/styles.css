@@ -963,6 +963,39 @@ button:disabled {
   gap: 6px;
 }
 
+.modal-confirm-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  color: #ffffff;
+  background: #1d4ed8;
+  border: 1px solid #1d4ed8;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.modal-confirm-button:hover {
+  background: #1e40af;
+}
+
+.share-preview {
+  max-height: 220px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  overflow: auto;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
 .app-shell[data-layout-mode="mobile"] {
   --panel-edge-offset: 8px;
 }

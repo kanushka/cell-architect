@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { compileProject } from "../compiler/compileProject";
 
@@ -194,6 +194,53 @@ describe("DiagramCanvas live-edit motion", () => {
     );
 
     expect(screen.getByText("Worker").closest(".react-flow__node")).not.toHaveClass("diagram-node--entering");
+  });
+
+  it("keeps a node animating through a re-render that did not change the graph", async () => {
+    // API and DB are linked so that focusing API yields a non-empty connection
+    // set, which is what actually re-renders the canvas.
+    const initialModel = buildModel("component API service\ncomponent DB database\nAPI -> DB");
+    const { rerender } = render(<DiagramCanvas model={initialModel} motionContextKey="doc-1" />);
+
+    const apiCircle = screen.getByText("API").closest(".component-node");
+    const apiNode = screen.getByText("API").closest(".react-flow__node");
+    await waitFor(() => expect(apiCircle).toHaveAttribute("data-diagram-node-id", "API"));
+
+    const nextModel = buildModel(
+      "component API service\ncomponent DB database\nAPI -> DB\ncomponent Worker service"
+    );
+    rerender(<DiagramCanvas model={nextModel} motionContextKey="doc-1" />);
+    expect(screen.getByText("Worker").closest(".react-flow__node")).toHaveClass("diagram-node--entering");
+
+    // Focusing a component re-renders without touching the graph. Motion used to
+    // be recomputed during every render against an already-updated snapshot, so
+    // an unrelated re-render like this one dropped the entrance mid-animation.
+    fireEvent.click(apiCircle!);
+    await waitFor(() => expect(apiNode).toHaveClass("connection-highlight-node"));
+
+    expect(screen.getByText("Worker").closest(".react-flow__node")).toHaveClass("diagram-node--entering");
+  });
+
+  it("clears the entrance once the motion has had time to settle", () => {
+    vi.useFakeTimers();
+    try {
+      const initialModel = buildModel("component API service");
+      const { rerender } = render(<DiagramCanvas model={initialModel} motionContextKey="doc-1" />);
+
+      const nextModel = buildModel("component API service\ncomponent Worker service");
+      rerender(<DiagramCanvas model={nextModel} motionContextKey="doc-1" />);
+      expect(screen.getByText("Worker").closest(".react-flow__node")).toHaveClass("diagram-node--entering");
+
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      expect(screen.getByText("Worker").closest(".react-flow__node")).not.toHaveClass(
+        "diagram-node--entering"
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

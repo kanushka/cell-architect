@@ -1,0 +1,70 @@
+name: Bug report
+description: Something in the app, the DSL, or the library behaves incorrectly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please do **not** use this form for security
+        vulnerabilities — follow [SECURITY.md](https://github.com/kanushka/cell-architect/blob/main/SECURITY.md)
+        instead.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does this happen?
+      options:
+        - Hosted app (cell-architect.web.app)
+        - Local playground (npm run dev)
+        - The library (@kanushka/cell-diagram-react)
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: source
+    attributes:
+      label: Cell DSL source
+      description: >
+        The smallest `.cell` source that reproduces the problem. A share link works too.
+        Please strip anything confidential — diagram content is often internal architecture.
+      render: text
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Paste the source above into the editor
+        2. Click ...
+        3. The diagram renders ...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Library version, or the commit SHA if running locally. Leave blank for the hosted app.
+      placeholder: "@kanushka/cell-diagram-react 0.3.0"
+
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and OS
+      placeholder: Chrome 140 on macOS 15
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors
+      description: Any errors from the browser devtools console.
+      render: text

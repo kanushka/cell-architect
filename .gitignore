@@ -12,3 +12,4 @@ vite.config.d.ts
 # Brainstorming visual companion scratch
 .superpowers/
 .worktrees/
+.playwright-mcp/

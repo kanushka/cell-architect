@@ -2,6 +2,9 @@
 
 React component + DSL for cell architecture diagrams, with a WSO2 cell-diagram converter.
 
+Try the DSL in the browser at **[cell-architect.web.app](https://cell-architect.web.app/)**, or browse the
+[source on GitHub](https://github.com/kanushka/cell-architect).
+
 ## Install
 
 ```bash
@@ -37,8 +40,8 @@ import { CellDiagram, type DiagramTheme } from "@kanushka/cell-diagram-react";
 ```
 
 `theme` accepts `"light" | "dark"` (the `DiagramTheme` type) and defaults to `"light"`.
-The theme is applied to the diagram root element via a `data-cd-theme` attribute, and
-image exports capture whatever theme is currently displayed.
+The theme is applied to the diagram root element via a `data-cd-theme` attribute, so any
+screenshot or capture of the diagram reflects whatever theme is currently displayed.
 
 ### Custom colors
 
@@ -114,7 +117,7 @@ The diagram also exposes composite tokens for elevation and inline notifications
 `--cd-highlight-edge-shadow`, `--cd-hint-active-text`, `--cd-hint-active-border`,
 `--cd-hint-active-shadow`, `--cd-warn-text`, `--cd-warn-bg`, `--cd-warn-border`,
 `--cd-warn-shadow`, `--cd-info-text`, `--cd-info-bg`. Their light/dark defaults are in
-[`diagram.css`](./src/renderer/diagram.css).
+[`diagram.css`](https://github.com/kanushka/cell-architect/blob/main/packages/cell-diagram-react/src/renderer/diagram.css).
 
 ## Limitations
 

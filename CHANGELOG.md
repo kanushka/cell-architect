@@ -30,6 +30,10 @@ listed under the release they went out with, marked **(app)**.
   `Cross-Origin-Opener-Policy`.
 - **(app)** Content-hashed assets are cached for a year as immutable, and HTML is served
   `no-cache`, so a deploy reaches visitors immediately rather than up to an hour later.
+- **(app)** The GitHub mark in the help popover is now drawn locally, because `lucide-react`
+  removed its brand icons in 1.0. No visual change.
+- Development toolchain moved to TypeScript 6. `vite/client` is now referenced from both
+  workspace tsconfigs, which TypeScript 6 requires to resolve side-effect CSS imports.
 
 ### Fixed
 

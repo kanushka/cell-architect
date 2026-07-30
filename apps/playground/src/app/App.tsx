@@ -28,11 +28,21 @@ import { HelpPanel } from "./HelpPanel";
 import { Modal } from "./Modal";
 import { ShareButton } from "./ShareButton";
 import { ShareImportDialog } from "./ShareImportDialog";
+import { ShareImportPrompt } from "./ShareImportPrompt";
 import "@kanushka/cell-diagram-react/style.css";
 import "./styles.css";
 import { useDebouncedValue } from "./useDebouncedValue";
 
 const DIAGRAM_MODEL_DEBOUNCE_MS = 120;
+
+/**
+ * Ceiling on a `.cell` file chosen through the import picker.
+ *
+ * Generous next to any real diagram -- the compiler's node limit is the check
+ * that decides whether a source is renderable. This only stops the app from
+ * reading a wildly oversized file into memory before that check can run.
+ */
+const MAX_IMPORT_FILE_BYTES = 1_000_000;
 
 function downloadText(filename: string, content: string) {
   const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
@@ -48,7 +58,12 @@ interface PendingShare {
   name: string;
   source: string;
   layout: CustomLayout | null;
+  layoutError: boolean;
 }
+
+// "confirm" asks whether to keep the shared diagram at all; "full" is the
+// follow-up shown only when accepting it would exceed the document limit.
+type ShareStage = "confirm" | "full";
 
 interface TimedCanvasMessage extends CanvasMessage {
   durationMs: number;
@@ -88,7 +103,8 @@ export function App() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DiagramDocument | null>(null);
   const [pendingShare, setPendingShare] = useState<PendingShare | null>(null);
-  const [shareError, setShareError] = useState<string | null>(null);
+  const [shareStage, setShareStage] = useState<ShareStage>("confirm");
+  const [importError, setImportError] = useState<{ title: string; message: string } | null>(null);
   const [sessionLayout, setSessionLayout] = useState<{ documentId: string; layout: CustomLayout } | null>(null);
   const [canvasMessage, setCanvasMessage] = useState<TimedCanvasMessage | null>(null);
   const canvasMessageIdRef = useRef(0);
@@ -103,31 +119,36 @@ export function App() {
       }
 
       clearShareUrl();
-      const portableSource = decodeShareSource(param);
+      const decoded = decodeShareSource(param);
 
-      if (!portableSource) {
-        setShareError("This share link is invalid or corrupted.");
+      if (!decoded.ok) {
+        setImportError(
+          decoded.reason === "too-large"
+            ? {
+                title: "Share link too large",
+                message:
+                  "This link expands to more diagram source than Cell Architect will open. Ask whoever sent it to share a .cell file instead."
+              }
+            : { title: "Share link error", message: "This share link is invalid or corrupted." }
+        );
         return;
       }
 
-      const { source, layout, layoutError } = parsePortableSource(portableSource);
-      if (layoutError) {
-        showCanvasMessage("info", "The shared manual layout could not be restored. Auto arrange was used instead.");
-      }
+      const { source, layout, layoutError } = parsePortableSource(decoded.source);
+      const compiled = compileProject(source);
 
-      const name = compileProject(source).model?.title || "Shared Cell";
-      const state = loadRepository();
-
-      if (state.documents.length < MAX_DOCUMENTS) {
-        const created = createDocument(name, source);
-        if (created && layout) {
-          setSessionLayout({ documentId: created.id, layout });
-        }
-        setRepository(loadRepository());
+      if (!compiled.model) {
+        setImportError({
+          title: "Shared diagram could not be opened",
+          message: compiled.diagnostics[0]?.message ?? "The shared diagram source is not valid Cell DSL."
+        });
         return;
       }
 
-      setPendingShare({ name, source, layout });
+      // Never write into the library straight from a URL. Following a link is
+      // not consent to have a diagram saved, so ask first.
+      setShareStage("confirm");
+      setPendingShare({ name: compiled.model.title || "Shared Cell", source, layout, layoutError });
     }
 
     processShareLink();
@@ -237,16 +258,38 @@ export function App() {
     downloadText(`${document.name || "cell-diagram"}.cell`, serializePortableSource(document.source, layout));
   }
 
+  function savePendingShare(share: PendingShare) {
+    const created = createDocument(share.name, share.source);
+    setSessionLayout(created && share.layout ? { documentId: created.id, layout: share.layout } : null);
+    if (share.layoutError) {
+      showCanvasMessage("info", "The shared manual layout could not be restored. Auto arrange was used instead.");
+    }
+    setPendingShare(null);
+    refreshRepository();
+  }
+
+  function handleAcceptShare() {
+    if (!pendingShare) {
+      return;
+    }
+
+    // Re-read rather than trusting the render-time count: the prompt can sit
+    // open while diagrams are created or deleted behind it.
+    if (loadRepository().documents.length >= MAX_DOCUMENTS) {
+      setShareStage("full");
+      return;
+    }
+
+    savePendingShare(pendingShare);
+  }
+
   function handleDeleteAndSaveShared(document: DiagramDocument) {
     if (!pendingShare) {
       return;
     }
 
     deleteDocument(document.id);
-    const created = createDocument(pendingShare.name, pendingShare.source);
-    setSessionLayout(created && pendingShare.layout ? { documentId: created.id, layout: pendingShare.layout } : null);
-    setPendingShare(null);
-    refreshRepository();
+    savePendingShare(pendingShare);
   }
 
   function handleEditorToggle() {
@@ -266,6 +309,15 @@ export function App() {
 
     if (isAtDocumentLimit) {
       event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_IMPORT_FILE_BYTES) {
+      event.target.value = "";
+      setImportError({
+        title: "File too large",
+        message: `"${file.name}" is larger than ${Math.round(MAX_IMPORT_FILE_BYTES / 1000)} KB. Cell files are normally a few kilobytes, so this is unlikely to be a diagram.`
+      });
       return;
     }
 
@@ -411,7 +463,16 @@ export function App() {
         />
       ) : null}
 
-      {pendingShare ? (
+      {pendingShare && shareStage === "confirm" ? (
+        <ShareImportPrompt
+          name={pendingShare.name}
+          source={pendingShare.source}
+          onConfirm={handleAcceptShare}
+          onCancel={() => setPendingShare(null)}
+        />
+      ) : null}
+
+      {pendingShare && shareStage === "full" ? (
         <ShareImportDialog
           documents={repository.documents}
           onExport={handleExport}
@@ -420,11 +481,11 @@ export function App() {
         />
       ) : null}
 
-      {shareError ? (
-        <Modal title="Share link error" onClose={() => setShareError(null)}>
-          <p>{shareError}</p>
+      {importError ? (
+        <Modal title={importError.title} onClose={() => setImportError(null)}>
+          <p>{importError.message}</p>
           <div className="modal-actions">
-            <button type="button" className="pill-button" onClick={() => setShareError(null)}>
+            <button type="button" className="pill-button" onClick={() => setImportError(null)}>
               Close
             </button>
           </div>

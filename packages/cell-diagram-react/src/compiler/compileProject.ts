@@ -33,6 +33,26 @@ function resolveCrossEdges(
   return { edges, diagnostics };
 }
 
+/**
+ * Upper bound on how many nodes a compiled project may contain.
+ *
+ * Layout and rendering cost grows faster than linearly in the node count, so a
+ * source with thousands of nodes locks up the browser rather than producing a
+ * useful diagram. Consumers routinely render sources they did not author —
+ * share links, imported files — so the ceiling belongs here in the compiler,
+ * where it surfaces as an ordinary diagnostic, rather than in any one caller.
+ *
+ * A diagram this large stopped being readable long before it hits the limit.
+ */
+export const MAX_DIAGRAM_NODES = 1000;
+
+function countNodes(cells: CellModel[], sharedExternals: ExternalNode[]) {
+  return cells.reduce(
+    (total, cell) => total + 1 + cell.components.length + cell.externals.length,
+    sharedExternals.length
+  );
+}
+
 export function compileProject(source: string): ProjectCompileResult {
   const { project, diagnostics: parseDiagnostics } = parseProject(source);
   const diagnostics: Diagnostic[] = [...parseDiagnostics];
@@ -76,6 +96,21 @@ export function compileProject(source: string): ProjectCompileResult {
 
   if (diagnostics.length > 0) {
     return { model: null, diagnostics };
+  }
+
+  const nodeCount = countNodes(scopedCells, sharedExternals);
+  if (nodeCount > MAX_DIAGRAM_NODES) {
+    return {
+      model: null,
+      diagnostics: [
+        {
+          severity: "error",
+          message: `This diagram has ${nodeCount} nodes, more than the ${MAX_DIAGRAM_NODES} node limit. Split it into separate diagrams.`,
+          line: 1,
+          column: 1
+        }
+      ]
+    };
   }
 
   const model: ProjectModel = { title: project.title, cells: scopedCells, crossEdges, sharedExternals };

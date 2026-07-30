@@ -133,6 +133,10 @@ Cell Architect has no backend. There is no account, no telemetry, and no diagram
 - Share links carry the compressed DSL in the URL fragment (`#s=…`), which browsers never send to a server.
 - Export important diagrams as `.cell` files before clearing browser data or switching machines.
 
+Opening a share link always asks before saving anything, and shows you the diagram source
+first — following a link is not consent to have a diagram added to your library. Diagrams
+are capped at 1000 nodes so that an oversized source cannot lock up the browser.
+
 ## Project Structure
 
 ```text

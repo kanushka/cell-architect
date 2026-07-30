@@ -119,6 +119,23 @@ The diagram also exposes composite tokens for elevation and inline notifications
 `--cd-warn-shadow`, `--cd-info-text`, `--cd-info-bg`. Their light/dark defaults are in
 [`diagram.css`](https://github.com/kanushka/cell-architect/blob/main/packages/cell-diagram-react/src/renderer/diagram.css).
 
+## Node limit
+
+`compileProject` refuses a source over `MAX_DIAGRAM_NODES` (1000) nodes, returning a `null`
+model and one error diagnostic rather than attempting a layout that would lock up the
+browser. Layout cost grows faster than linearly in the node count, and consumers frequently
+render sources they did not author — a share link, an uploaded file — so the ceiling is
+enforced in the compiler rather than left to each caller.
+
+```tsx
+import { compileProject, MAX_DIAGRAM_NODES } from "@kanushka/cell-diagram-react";
+
+const { model, diagnostics } = compileProject(untrustedSource);
+if (!model) {
+  // diagnostics[0].message explains why, including the node limit case
+}
+```
+
 ## Limitations
 
 The WSO2 converter assumes component and service identifiers from the WSO2 cell-diagram model are valid Cell DSL identifiers. An identifier that exactly equals a DSL reserved keyword (`title`, `version`, `component`, `as`, `north`, `south`, `east`, `west`) will produce DSL output that fails to compile. Such inputs are out of scope for the converter.

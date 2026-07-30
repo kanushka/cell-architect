@@ -127,11 +127,21 @@ function projectOutsideCell(position: XYPosition, cell: Node): XYPosition {
 function constrainSharedExternal(position: XYPosition, nodes: Node[]) {
   const cells = nodes.filter((node) => nodeData(node).layoutKind === "cell");
   let constrained = position;
+
+  // Pushing a node out of one cell can push it into another, so passes repeat
+  // until the position stops moving. The pass count stays bounded as a
+  // safety net, but settling usually takes one or two -- without the early
+  // exit this runs the full O(cells^2) every time, for every node.
   for (let pass = 0; pass < Math.max(1, cells.length * 2); pass += 1) {
+    const before = constrained;
     cells.forEach((cell) => {
       constrained = projectOutsideCell(constrained, cell);
     });
+    if (constrained.x === before.x && constrained.y === before.y) {
+      break;
+    }
   }
+
   return constrained;
 }
 

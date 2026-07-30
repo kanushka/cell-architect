@@ -1,4 +1,4 @@
-export { compileProject } from "./compiler/compileProject";
+export { compileProject, MAX_DIAGRAM_NODES } from "./compiler/compileProject";
 export { compileCellSource } from "./compiler/compileCellSource";
 export { parseProject } from "./parser/parseProject";
 export {

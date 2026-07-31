@@ -25,8 +25,8 @@ function now() {
 function defaultState(): DocumentRepositoryState {
   const timestamp = now();
   const document: DiagramDocument = {
-    id: "order-system",
-    name: "Order System",
+    id: "storefront",
+    name: "Storefront",
     source: defaultSampleSource,
     createdAt: timestamp,
     updatedAt: timestamp

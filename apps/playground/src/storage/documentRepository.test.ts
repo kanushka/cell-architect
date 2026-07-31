@@ -18,7 +18,7 @@ describe("documentRepository", () => {
 
   it("restores the default sample when storage is empty or corrupt", () => {
     expect(loadRepository().documents).toHaveLength(1);
-    expect(loadRepository().documents[0].name).toBe("Order System");
+    expect(loadRepository().documents[0].name).toBe("Storefront");
 
     localStorage.setItem(STORAGE_KEY, "{broken");
 

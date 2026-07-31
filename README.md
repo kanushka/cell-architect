@@ -127,25 +127,68 @@ For full notation details, see the [DSL guide](docs/dsl-guide.md).
 
 ## Agent skill
 
-If you write `.cell` documents with a coding agent, install the skill so the agent knows the
-notation and where things belong on a cell boundary:
+Describe your system to a coding agent in plain English and get a `.cell` document back.
+
+### Install
 
 ```bash
 npx skills add kanushka/cell-architect --skill cell-diagram
 ```
 
-It works with Claude Code, Codex, opencode and anything else `npx skills` supports — pass
-`-a <agent>` to target one, or `--list` to see what this repo ships. The skill lives in
-[`skills/cell-diagram`](skills/cell-diagram) and is self-contained: it carries the grammar, so it
-works in a project that has nothing else from this repo.
+Works with Claude Code, Codex, opencode and anything else [`npx skills`](https://github.com/vercel-labs/skills)
+supports. Add `-a <agent>` to target one agent, `-g` to install globally instead of per-project, or
+`--list` to see what this repo ships.
 
-The skill is evaluated rather than assumed to work. [`evals/cell-diagram`](evals/cell-diagram/README.md)
-holds prose architecture briefs, the documents agents produced for them, and a scorer that compiles
-each one and checks placement:
+The skill is **self-contained** — it carries the grammar, so it works in a project that has nothing
+else from Cell Architect installed.
+
+### Use
+
+Just describe the system. No DSL vocabulary needed:
+
+> We have a React app customers use, an Orders API behind it, and an Order Service that owns a
+> Postgres database and charges cards through Stripe. Draw this as a cell diagram.
+
+```cell
+component webApp as "Customer Web" webapp
+component ordersApi as "Orders API" api
+component orderService as "Order Service" service
+component odb as "Order Store" database
+
+north -> webApp
+
+webApp -> ordersApi
+ordersApi -> orderService
+orderService -> odb
+orderService -> south Stripe : charge card
+```
+
+Paste the result into the [playground](https://cell-architect.web.app), or save it as a `.cell` file
+and open it there. The skill also handles editing an existing document, so "add a Redis cache the
+Order Service reads from" works on a file you already have.
+
+What it knows beyond the syntax is **placement** — the judgment the notation encodes:
+
+- Services, UIs and the cell's own datastore go **inside** the cell; it is the project boundary
+- `north` / `west` are inbound (public internet vs intranet), `east` / `south` outbound
+  (another team's platform vs third-party SaaS)
+- A counterpart the brief names only by category ("an object store", "any client") gets a gateway
+  exposure, not an invented node
+- Cyclic cell dependencies use a decoupled cross-cell link so the diagram stays readable
+
+### How it was verified
+
+The skill is evaluated rather than assumed to work.
+[`evals/cell-diagram`](evals/cell-diagram/README.md) holds prose architecture briefs, a scorer that
+compiles each answer and checks placement, and the recorded runs:
 
 ```bash
 npx vitest run evals/cell-diagram/score.test.ts
 ```
+
+Agents given only the skill, isolated from this repo, score 5/5 on both Opus and Haiku 4.5. Agents
+given nothing invent a different DSL entirely. The eval README records what repeated runs found and
+which skill wording changed the outcome.
 
 ## Storage and privacy
 

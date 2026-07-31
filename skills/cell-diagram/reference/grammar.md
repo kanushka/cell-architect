@@ -1,6 +1,10 @@
 # Cell DSL — full grammar
 
-Line-based. One statement per line. Blank lines ignored. `#` and `//` start a comment.
+Line-based. One statement per line. Blank lines ignored.
+
+A comment is a **whole line** beginning with `#` or `//`. **Trailing comments are not supported and
+fail silently** — `Courses -> Tasks # note` does not error, it creates a component whose id is
+`Tasks # note` and points the edge at that instead of `Tasks`. Always put a comment on its own line.
 
 **Statements are order-independent.** An id may be used before it is declared. Declare-then-use is
 the readable convention, not a requirement.
@@ -63,11 +67,16 @@ outbound.**
 ## Dependencies
 
 ```cell
-A -> B                       # internal
-A -> B : label               # any arrow takes an optional ": label"
-CustomerApp -> WebApp        # predeclared external
-north CustomerApp -> WebApp  # inline: declares the external and the edge together
-WebApp -> south Stripe       # inline, outbound
+# internal; any arrow takes an optional ": label"
+A -> B
+A -> B : label
+
+# predeclared external
+CustomerApp -> WebApp
+
+# inline: declares the external and the edge together
+north CustomerApp -> WebApp
+WebApp -> south Stripe
 ```
 
 `->` is the only arrow. `--`, `-->`, `<-` are syntax errors.
@@ -157,10 +166,13 @@ top level both ends must be qualified.
 ```cell
 cell orders {
   component api
-  api -> products.api                # connected; default exit=east entry=west
-  api -> east-north products.api     # connected; exit east, enter north
-  api -> south-north products.api    # decoupled
-  api -> south-west products.api     # decoupled
+  # connected; default exit=east entry=west
+  api -> products.api
+  # connected; exit east, enter north
+  api -> east-north products.api
+  # decoupled
+  api -> south-north products.api
+  api -> south-west products.api
 }
 
 cell products {

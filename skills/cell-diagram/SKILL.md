@@ -40,7 +40,8 @@ So the most common shape in the whole notation is a UI inside the cell, reached 
 component webApp as "Customer Web" webapp
 component api
 
-north -> webApp                # anonymous ingress, no external node
+# anonymous ingress, no external node
+north -> webApp
 webApp -> api
 ```
 
@@ -95,12 +96,12 @@ If you catch yourself writing any of these, the placement is wrong:
 
 North and west are **inbound**; east and south are **outbound**. The compiler rejects the reverse:
 
-```cell
-north -> api      # ok — flows in
-api -> east       # ok — flows out
-api -> north      # ERROR: North boundary connections must flow into the cell.
-east -> api       # ERROR: East boundary connections must flow out of the cell.
-```
+| Statement | Result |
+| --- | --- |
+| `north -> api` | ok — flows in |
+| `api -> east` | ok — flows out |
+| `api -> north` | `North boundary connections must flow into the cell.` |
+| `east -> api` | `East boundary connections must flow out of the cell.` |
 
 An external that both calls you and is called by you needs **two declarations with different ids**
 (`north partnerIn`, `east partnerOut`). Declaring the same id on two sides is
@@ -109,21 +110,30 @@ An external that both calls you and is called by you needs **two declarations wi
 ## Syntax
 
 ```cell
-title ShippingCell                    # optional; renders on the cell boundary
-version v1                            # optional
+# title and version are optional; they render on the cell boundary
+title ShippingCell
+version v1
 
-component api                         # component <id> [as <label>] [type]
+# component <id> [as <label>] [type]
+component api
 component labels as "Label Printer" worker
 component sdb as "Shipment Store" database
-east rates as "Rate Engine" api       # <direction> <id> [as <label>] [type]
+
+# <direction> <id> [as <label>] [type]
+east rates as "Rate Engine" api
 south DHL courier
 
-api -> sdb                            # dependency, optional ": label"
+# dependencies, with an optional ": label"
+api -> sdb
 api -> labels : print label
 api -> rates : quote
-api -> south UPS : book pickup        # inline — declares the external and the edge together
-north -> api                          # gateway exposure, no external node
-api -> east : archive                 # exposures take labels too
+
+# inline form — declares the external and the edge together
+api -> south UPS : book pickup
+
+# gateway exposures create no external node, and take labels too
+north -> api
+api -> east : archive
 ```
 
 - **Ids** are single words used in arrows; letters, digits, `-` and `_` are all fine. Avoid `.` — it
@@ -143,7 +153,9 @@ api -> east : archive                 # exposures take labels too
 - **Statements are order-independent** — you may use an id before declaring it. Declare-then-use
   still reads better.
 - Reserved, cannot be ids: `north` `east` `south` `west` `component` `cell` `as` `title` `version`.
-- Comments start with `#` or `//`. Blank lines are ignored.
+- A comment is a **whole line** starting with `#` or `//`. Blank lines are ignored. There are no
+  trailing comments — `a -> b # note` is not a comment, it silently becomes part of the target id.
+  Put the note on its own line above.
 
 Multi-cell projects, cross-cell links, shared externals and the full grammar are in
 [reference/grammar.md](reference/grammar.md). Read it whenever the diagram has more than one cell.
@@ -201,8 +213,10 @@ east identity as "Identity Service" api
 south Cloudflare cdn
 south Mux transcoding
 
-west -> cms                    # editors, on the corporate network
-north -> catalog               # anonymous viewers, over the internet
+# editors, on the corporate network
+west -> cms
+# anonymous viewers, over the internet
+north -> catalog
 
 cms -> uploadApi : publish
 

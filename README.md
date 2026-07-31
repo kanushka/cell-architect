@@ -138,20 +138,6 @@ What it adds beyond the syntax is **placement** — the judgment the notation en
   exposure, not an invented node
 - Cyclic cell dependencies use a decoupled cross-cell link so the diagram stays readable
 
-### How it was verified
-
-The skill is evaluated rather than assumed to work.
-[`evals/cell-diagram`](evals/cell-diagram/README.md) holds prose architecture briefs, a scorer that
-compiles each answer and checks placement, and the recorded runs:
-
-```bash
-npx vitest run evals/cell-diagram/score.test.ts
-```
-
-Agents given only the skill, isolated from this repo, score 5/5 on both Opus and Haiku 4.5. Agents
-given nothing invent a different DSL entirely. The eval README records what repeated runs found and
-which skill wording changed the outcome.
-
 ## React library
 
 The renderer is published as
@@ -220,6 +206,9 @@ where a document and the code disagree, the code is correct.
 Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the development setup, the
 checks CI runs, how changes are reviewed, and the release process. By taking part you agree to the
 [Code of Conduct](CODE_OF_CONDUCT.md).
+
+Changing the agent skill? [`evals/cell-diagram`](evals/cell-diagram/README.md) scores it against
+prose architecture briefs — read it before editing `skills/cell-diagram`.
 
 Release history is in [CHANGELOG.md](CHANGELOG.md).
 

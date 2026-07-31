@@ -256,6 +256,74 @@ east inv as "Inventory API"`);
     ]);
   });
 
+  it("strips a trailing comment from a dependency instead of absorbing it into the target id", () => {
+    const result = parseCellDsl(`component Courses
+component Tasks
+
+Courses -> Tasks # not part of the id`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.document.components.map((component) => component.id)).toEqual(["Courses", "Tasks"]);
+    expect(result.document.edges).toEqual([
+      expect.objectContaining({ source: "Courses", target: "Tasks", label: undefined })
+    ]);
+  });
+
+  it("strips a trailing // comment", () => {
+    const result = parseCellDsl(`component a
+component b
+
+a -> b // note`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.document.edges).toEqual([expect.objectContaining({ source: "a", target: "b" })]);
+  });
+
+  it("strips a trailing comment from component, external, title and version statements", () => {
+    const result = parseCellDsl(`title Storefront # the project
+version v3 // second revision
+component api service # our own
+south Stripe payment # vendor`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.document.title).toBe("Storefront");
+    expect(result.document.version).toBe("v3");
+    expect(result.document.components).toEqual([
+      { id: "api", label: undefined, type: "service", line: 3 }
+    ]);
+    expect(result.document.externals).toEqual([
+      { id: "Stripe", direction: "south", label: undefined, type: "payment", line: 4 }
+    ]);
+  });
+
+  /**
+   * Everything after ":" is a free-text label, so a "#" or "//" there is content,
+   * not a comment. Stripping it would silently truncate legitimate labels.
+   */
+  it("keeps # and // inside an edge label", () => {
+    const result = parseCellDsl(`component a
+component b
+component c
+
+a -> b : fixes #42
+a -> c : see https://example.com/docs`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.document.edges.map((edge) => edge.label)).toEqual([
+      "fixes #42",
+      "see https://example.com/docs"
+    ]);
+  });
+
+  it("keeps # inside a quoted label", () => {
+    const result = parseCellDsl(`component c1 as "Cell #1" service`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.document.components).toEqual([
+      { id: "c1", label: "Cell #1", type: "service", line: 1 }
+    ]);
+  });
+
   it("keeps the unquoted multi-word heuristic for backward compatibility", () => {
     const result = parseCellDsl(`component ldb as Datastore database
 south adb as Azure Postgre database`);

@@ -2,9 +2,12 @@
 
 Line-based. One statement per line. Blank lines ignored.
 
-A comment is a **whole line** beginning with `#` or `//`. **Trailing comments are not supported and
-fail silently** — `Courses -> Tasks # note` does not error, it creates a component whose id is
-`Tasks # note` and points the edge at that instead of `Tasks`. Always put a comment on its own line.
+A comment begins with `#` or `//`, either on its own line or trailing a statement
+(`component odb database # owned here`).
+
+**Except after a `:` label.** Everything past the label separator is free text, so `#` and `//`
+there are content — which is what allows `a -> b : fixes #42` and labels containing URLs. A note on
+a labelled dependency has to go on its own line.
 
 **Statements are order-independent.** An id may be used before it is declared. Declare-then-use is
 the readable convention, not a requirement.
@@ -90,7 +93,8 @@ external node is created.
 north -> API
 west  -> API
 API -> east
-API -> south : archive        # exposures take a ": label" like any other arrow
+# exposures take a ": label" like any other arrow
+API -> south : archive
 ```
 
 `API -> north`, `API -> west`, `east -> API`, `south -> API` are all rejected — they point against

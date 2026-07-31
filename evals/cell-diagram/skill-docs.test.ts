@@ -39,27 +39,30 @@ describe("skill examples", () => {
   });
 
   /**
-   * Trailing comments do NOT produce a diagnostic — `a -> b # note` silently
-   * becomes an edge to a component literally named `b # note`. The compile
-   * check above therefore passes on corrupted examples, which is exactly how
-   * these got into the skill in the first place. This is the only check that
-   * catches them.
+   * Trailing comments are supported, but not after a ":" label — everything
+   * there is free text, so `a -> b : label # note` silently folds the note into
+   * the label and renders it on the diagram. No diagnostic is produced, so the
+   * compile check above cannot catch it. This is the only check that does.
    */
-  it.each(DOCS)("%s: no block uses a trailing comment", (file) => {
+  it.each(DOCS)("%s: no comment marker is stranded inside an edge label", (file) => {
     const offenders: string[] = [];
     cellBlocks(file).forEach(({ src, line }) => {
       src.split("\n").forEach((raw, i) => {
         const statement = raw.trim();
         if (!statement || statement.startsWith("#") || statement.startsWith("//")) return;
-        // Everything after " : " is a free-text label and may legitimately
-        // contain # or //, so only inspect the statement before it, ignoring
-        // quoted labels.
-        const beforeLabel = statement.split(" : ")[0].replace(/"[^"]*"/g, "");
-        if (/\S\s+(#|\/\/)/.test(beforeLabel)) {
+
+        const separator = statement.indexOf(" : ");
+        if (separator === -1) return;
+
+        const label = statement.slice(separator + 3);
+        if (/\s(#|\/\/)/.test(label)) {
           offenders.push(`${file}:${line + i}  ${statement}`);
         }
       });
     });
-    expect(offenders, `Put these comments on their own line:\n${offenders.join("\n")}`).toEqual([]);
+    expect(
+      offenders,
+      `These read as comments but render as part of the label:\n${offenders.join("\n")}`
+    ).toEqual([]);
   });
 });

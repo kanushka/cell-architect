@@ -43,7 +43,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@dagrejs/dagre": "^1.1.5",
+    "@dagrejs/dagre": "^3.0.0",
     "@xyflow/react": "^12.11.2",
     "html-to-image": "^1.11.13",
     "lz-string": "^1.5.0"

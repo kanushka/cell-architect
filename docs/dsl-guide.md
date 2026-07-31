@@ -294,6 +294,24 @@ north CustomerApp -> WebApp : HTTPS
 WebApp -> OrderAPI
 ```
 
+A comment may also follow a statement on the same line:
+
+```cell
+component odb database   # owned by this cell
+WebApp -> OrderAPI       // synchronous
+```
+
+The one place a trailing comment does not apply is **after a `:` label**. Everything following the
+label separator is free text, so `#` and `//` there are content rather than a comment — which is
+what lets a label read `fixes #42` or carry a URL:
+
+```cell
+orders -> tracker : fixes #42
+orders -> docs : see https://example.com/runbook
+```
+
+If you need a note on a labelled dependency, put it on its own line above.
+
 ## Manual Arrangement
 
 Drag an internal component to reposition it inside its cell. External components

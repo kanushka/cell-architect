@@ -121,6 +121,22 @@ describe.each(arms)("arm: %s", (arm) => {
       expect(result.diagnostics).toEqual([]);
     });
 
+    /**
+     * A malformed statement usually still compiles — the parser infers an
+     * internal component from whatever it found, so a stray token becomes a
+     * node id rather than an error. An id containing whitespace or a comment
+     * marker is always that, never something an author meant.
+     */
+    it("produces no node id that looks like a parse accident", () => {
+      const model = result.model;
+      expect(model, "document did not compile").not.toBeNull();
+      const ids = model!.cells.flatMap((cell) => [
+        ...cell.components.map((c) => c.id),
+        ...cell.externals.map((e) => e.id)
+      ]);
+      expect(ids.filter((id) => /\s|#|\/\//.test(id))).toEqual([]);
+    });
+
     spec.checks.forEach((check) => {
       it(check.desc, () => {
         expect(result.model, "document did not compile, so the model is null").not.toBeNull();

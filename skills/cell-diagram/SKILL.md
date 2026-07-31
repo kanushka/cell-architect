@@ -153,9 +153,9 @@ api -> east : archive
 - **Statements are order-independent** — you may use an id before declaring it. Declare-then-use
   still reads better.
 - Reserved, cannot be ids: `north` `east` `south` `west` `component` `cell` `as` `title` `version`.
-- A comment is a **whole line** starting with `#` or `//`. Blank lines are ignored. There are no
-  trailing comments — `a -> b # note` is not a comment, it silently becomes part of the target id.
-  Put the note on its own line above.
+- Comments start with `#` or `//`, on their own line or trailing a statement. Blank lines are
+  ignored. The exception is **after a `:` label** — everything there is free text, so
+  `a -> b : fixes #42` keeps `#42` in the label. Put a note on a labelled dependency on its own line.
 
 Multi-cell projects, cross-cell links, shared externals and the full grammar are in
 [reference/grammar.md](reference/grammar.md). Read it whenever the diagram has more than one cell.

@@ -182,6 +182,33 @@ function parseArrow(statement: string, line: number): ParsedEdge | null {
   };
 }
 
+// An inline external (`api -> south Stripe`) takes a bare id. Everything after the direction is
+// otherwise swallowed into that id, so `-> south s as "Stripe" payment` would compile clean and
+// render a node captioned with the whole line. Reject it and point at the declaration form.
+function inlineExternalError(statement: string, line: number): Diagnostic | null {
+  const { body } = splitLabel(statement);
+  const parts = body.split(/\s*->\s*/);
+
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    return null;
+  }
+
+  for (const part of parts) {
+    const tokens = part.trim().split(/\s+/);
+
+    if (boundaryDirections.has(tokens[0] as BoundaryDirection) && tokens.length > 2) {
+      return {
+        severity: "error",
+        message: `Inline externals take a bare id: "${tokens[0]} ${tokens[1]}". Declare the external on its own line to give it a label or type.`,
+        line,
+        column: statement.indexOf(tokens[2]) + 1
+      };
+    }
+  }
+
+  return null;
+}
+
 function unknownStatement(line: number): Diagnostic {
   return {
     severity: "error",
@@ -300,6 +327,13 @@ export function parseCellDsl(source: string): ParseResult {
     }
 
     if (statement.includes("->")) {
+      const inlineError = inlineExternalError(statement, line);
+
+      if (inlineError) {
+        diagnostics.push(inlineError);
+        return;
+      }
+
       const edge = parseArrow(statement, line);
       if (edge) {
         edges.push(edge);

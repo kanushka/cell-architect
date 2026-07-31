@@ -82,6 +82,15 @@ north CustomerApp -> WebApp
 WebApp -> south Stripe
 ```
 
+The inline form takes a **bare id** on the boundary side — no `as` label, no type. `WebApp -> south
+s as "Stripe" payment` is rejected with `Inline externals take a bare id`. To give an external a
+label or a type, declare it on its own line and then draw a plain arrow:
+
+```cell
+south s as "Stripe" payment
+WebApp -> s : capture payment
+```
+
 `->` is the only arrow. `--`, `-->`, `<-` are syntax errors.
 
 ## Gateway exposures

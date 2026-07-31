@@ -210,6 +210,39 @@ API -> south`);
     ]);
   });
 
+  it("rejects a label or type on an inline outbound external", () => {
+    const result = parseCellDsl(`checkout -> south payhere as "PayHere" payment-gateway : capture payment`);
+
+    expect(result.document.edges).toEqual([]);
+    expect(result.diagnostics).toEqual([
+      {
+        severity: "error",
+        message:
+          'Inline externals take a bare id: "south payhere". Declare the external on its own line to give it a label or type.',
+        line: 1,
+        column: 27
+      }
+    ]);
+  });
+
+  it("rejects a label or type on an inline inbound external", () => {
+    const result = parseCellDsl(`north partner as "Partner Portal" webapp -> api`);
+
+    expect(result.document.edges).toEqual([]);
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0].message).toContain('Inline externals take a bare id: "north partner"');
+  });
+
+  it("still accepts bare inline externals on both sides", () => {
+    const result = parseCellDsl(`north CustomerApp -> api : HTTPS
+api -> south Stripe : payment
+api -> east
+north -> api`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.document.edges).toHaveLength(4);
+  });
+
   it("still allows reserved keywords as labels", () => {
     const result = parseCellDsl(`component api as component`);
 

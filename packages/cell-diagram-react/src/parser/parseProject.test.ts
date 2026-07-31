@@ -135,4 +135,32 @@ describe("parseProject", () => {
     expect(result.diagnostics).toEqual([]);
     expect(result.project.cells[0].document.edges.map((e) => e.line)).toEqual([6]);
   });
+
+  it("strips a trailing comment from a cross-cell edge", () => {
+    const source = [
+      "cell orders {",
+      "  component api",
+      "}",
+      "cell products {",
+      "  component api",
+      "}",
+      "orders.api -> products.api # stock lookup"
+    ].join("\n");
+
+    const result = parseProject(source);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.project.crossEdges).toEqual([
+      expect.objectContaining({ targetCell: "products", targetComp: "api", label: undefined })
+    ]);
+  });
+
+  it("strips a trailing comment from a cell block header", () => {
+    const source = ["cell orders { # the order cell", "  component api", "}"].join("\n");
+
+    const result = parseProject(source);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.project.cells.map((cell) => cell.id)).toEqual(["orders"]);
+  });
 });

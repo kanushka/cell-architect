@@ -8,7 +8,7 @@ import {
   ParsedExternal,
   ParseResult
 } from "../domain/cellModel";
-import { splitLabel } from "./labels";
+import { splitLabel, stripTrailingComment } from "./labels";
 
 const boundaryDirections = new Set<BoundaryDirection>(["north", "east", "south", "west"]);
 const reservedKeywords = new Set(["title", "version", "component", "as", ...boundaryDirections]);
@@ -203,11 +203,13 @@ export function parseCellDsl(source: string): ParseResult {
 
   source.split(/\r?\n/).forEach((rawLine, index) => {
     const line = index + 1;
-    const statement = rawLine.trim();
+    const raw = rawLine.trim();
 
-    if (!statement || statement.startsWith("#") || statement.startsWith("//")) {
+    if (!raw || raw.startsWith("#") || raw.startsWith("//")) {
       return;
     }
+
+    const statement = stripTrailingComment(raw);
 
     if (statement.startsWith("title ")) {
       title = statement.slice("title ".length).trim() || undefined;

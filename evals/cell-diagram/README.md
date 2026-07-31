@@ -45,9 +45,63 @@ Check kinds are defined in `score.test.ts`: `cellCount`, `componentMatching`, `e
 | Arm | What the agent had | Result |
 | --- | --- | --- |
 | `golden` | Hand-written by the skill author | 5/5 — proves the rubric is satisfiable |
+| `with-skill-opus` | Only `skills/cell-diagram/`, isolated from this repo | 5/5 |
+| `with-skill-haiku` | Same, run on Haiku 4.5 | 5/5 |
 | `_control-not-scored` | **Nothing** — no grammar, no skill | Does not produce `.cell` syntax at all |
-| `docs-only` | `docs/dsl-guide.md` from this repo, no skill | 5/5 |
-| `with-skill` | Only `skills/cell-diagram/`, isolated from this repo | 5/5 |
+| `_docs-only-not-scored` | `docs/dsl-guide.md` from this repo, no skill | Compiles, but fails the client-app rule |
+
+`_`-prefixed arms are recorded as evidence and excluded from scoring, so the suite stays green while
+the RED-phase runs remain inspectable.
+
+**The skill is not carrying a large model.** `with-skill-haiku` is the same isolated setup run on
+Haiku 4.5 and scores identically — client apps inside the cell with `north ->` / `west ->` ingress,
+`east` for platform services and `south` for SaaS, and `south-north` to decouple the cyclic
+back-edge in `c5`. A reference that only works when the model could have guessed anyway is not
+worth shipping; this one closes the gap for a small model too.
+
+### Variance, and what it fixed
+
+A single run per case flatters. Four reps per case on Haiku scored **17/20**. All three failures were
+informative:
+
+| Failure | Diagnosis |
+| --- | --- |
+| Declared the shared external once at the **top level** (`south s3` outside any block) → compile error | Skill gap: nothing said project-level external declarations don't exist |
+| Invented `east objectStore as "Object Store"` for an explicitly undecided system | Stated rule didn't bind |
+| Portal inside the cell but Ops Console on `west`, in one document | Stated rule didn't bind |
+
+The first was fixed by documenting it. The other two were both cases of a *prohibition* ("never
+invent a placeholder external") that the model read and then ignored under the pull of making the
+diagram look complete. Replacing the prohibition with a mechanical **proper-noun test** — does the
+brief name this thing, or only its category? — measurably changed the outcome:
+
+| `c3` wording | Pass rate |
+| --- | --- |
+| "Never invent a placeholder external" | 4/7 |
+| Proper-noun vs category-noun test | 4/4 |
+
+Small samples, but the separation is clean and it matches the general finding that a positive
+recipe binds where a prohibition negotiates.
+
+The c2 and c4 fixes are measured at 3/3 each — weak evidence that they are fixed rather than that
+the reps got lucky. Iteration stopped there rather than tuning wording against a handful of samples.
+
+### What is and isn't committed
+
+`golden/` is source: it pins the rubric, so if a check becomes unsatisfiable it goes red. The
+`with-skill-*` arms are the current claim, one snapshot per model.
+
+Repeated runs are a *measurement*, not a fixture — the rates above are the durable result, so the
+raw files were pruned to the two that back a specific claim:
+`_haiku-variance-not-scored/c3-propernoun-retest/` (the wording comparison) and
+`shared-external-at-top-level-MISTAKE.cell` (the compile error that prompted documenting
+project-level externals). Repeats are also deliberately not scored arms: a gate that fails 15% of
+the time is a flaky test, not a signal.
+
+To run an arm on another model, stage a copy of `skills/cell-diagram/` plus a case brief in an
+isolated directory, have the agent write `answer.cell`, and drop the results in
+`runs/<arm-name>/<case-id>.cell`. Isolation matters — an agent that can see this repo will find
+`docs/dsl-guide.md` and the arm stops measuring the skill.
 
 ### What the arms established
 
@@ -58,13 +112,20 @@ reported *"confidence it is valid `.cell` syntax: very low"*. Its **modelling wa
 Postgres inside, Stripe as an egress third party, HTTPS ingress from the public internet.
 
 The **docs-only** arm scored 83/84 on the first pass, and the single miss was a flawed expectation
-on our side, not a bad answer (see below). A capable agent handed the grammar already makes the
-subtle calls correctly: owned database inside the cell, `east` for another team's platform API vs
+on our side, not a bad answer (see below). A capable agent handed the grammar already makes most of
+the subtle calls correctly: owned database inside the cell, `east` for another team's platform API vs
 `south` for SaaS, `south-north` to break the cycle in `c5`.
 
-Together these say: **the load-bearing part of this skill is the portable grammar**, not the
-modelling advice. The placement rules are cheap to carry and keep good behaviour from drifting, but
-they are not what fails without the skill.
+So **the load-bearing part of this skill is the portable grammar**. Most of the modelling advice is
+insurance against drift rather than a fix for a demonstrated failure.
+
+**Except one rule.** Handed only `docs/dsl-guide.md`, agents consistently put client apps *on* the
+boundary — `north CustomerPortal`, `west OpsConsole`, `north customerApp` — because the guide's own
+sample does. The project's intent is the opposite: a cell is the project boundary, so the UIs that
+belong to the project belong **inside** it, and a UI moves to a boundary only when the brief calls it
+third-party or another org's. That is the one place where the skill demonstrably changes the output,
+and it is why `_docs-only-not-scored` fails `c2` and `c4` under the current rubric while
+`with-skill` passes.
 
 ### Expectations fixed during the run
 

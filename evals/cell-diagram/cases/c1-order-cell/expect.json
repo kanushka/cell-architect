@@ -3,6 +3,11 @@
   "checks": [
     { "kind": "cellCount", "n": 1, "desc": "one cell" },
     { "kind": "componentMatching", "pattern": "web", "desc": "web app is an internal component" },
+    {
+      "kind": "noExternalMatching",
+      "pattern": "web|app|portal|client|customer",
+      "desc": "the customer-facing web app is part of the system, not a boundary external"
+    },
     { "kind": "componentMatching", "pattern": "order", "desc": "order service/api is internal" },
     {
       "kind": "componentMatching",

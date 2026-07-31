@@ -1,9 +1,9 @@
 title SearchCell
 
 component searchApi as "Search API" api
-component indexer as "Indexer" worker
+component indexer worker
 component indexStore as "Index Store" database
 
-north -> searchApi
+north -> searchApi             # open API, callers unknown
 indexer -> indexStore : read
 indexer -> east : push documents

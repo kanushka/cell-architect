@@ -1,11 +1,14 @@
+title Commerce
+
 cell checkout as "Checkout Cell" {
   component api as "Checkout API" api
 
+  north -> api
   api -> loyalty.points : burn points
 }
 
 cell loyalty as "Loyalty Cell" {
   component points as "Points Service" service
 
-  points -> south-north checkout.api : look up order total
+  points -> south-north checkout.api : read order total
 }

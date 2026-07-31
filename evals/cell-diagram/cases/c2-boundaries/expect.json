@@ -18,6 +18,21 @@
       "desc": "reconciliation worker is internal"
     },
     {
+      "kind": "componentMatching",
+      "pattern": "portal",
+      "desc": "the customer portal is a client app of this system — inside the cell"
+    },
+    {
+      "kind": "componentMatching",
+      "pattern": "ops|console",
+      "desc": "the Ops Console is a client app of this system — inside the cell"
+    },
+    {
+      "kind": "noExternalMatching",
+      "pattern": "portal|console",
+      "desc": "neither UI is a boundary external; the brief never calls them third-party"
+    },
+    {
       "kind": "inboundOn",
       "direction": "north",
       "desc": "public-internet ingress arrives on north — named external or gateway exposure"

@@ -2,6 +2,16 @@
   "title": "Multi-cell project with cross-cell link and shared external",
   "checks": [
     { "kind": "cellCount", "n": 2, "desc": "two cell blocks" },
+    {
+      "kind": "componentMatching",
+      "pattern": "customer|app",
+      "desc": "the customer app lives inside the cell it serves, not on a boundary between cells"
+    },
+    {
+      "kind": "noExternalMatching",
+      "pattern": "customerapp|customer app|client",
+      "desc": "no client app floated onto a boundary"
+    },
     { "kind": "projectTitle", "pattern": "storefront", "desc": "project-level title set" },
     { "kind": "cellLabel", "pattern": "order cell", "desc": "orders cell has the quoted alias label" },
     { "kind": "cellVersion", "pattern": "v2", "desc": "orders cell version v2" },

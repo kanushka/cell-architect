@@ -4,11 +4,12 @@ cell orders as "Order Cell" {
   version v2
   component api as "Orders API" api
   component odb as "Order Store" database
-  north customerApp as "Customer App" webapp
+  component customerApp as "Customer App" webapp
 
+  north -> customerApp
   customerApp -> api : HTTPS
   api -> odb
-  api -> east s3 : archive
+  api -> south s3 : archive
 }
 
 cell products {

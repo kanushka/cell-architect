@@ -125,8 +125,9 @@ cell orders as "Order Cell" {
   version v2
   component api
   component odb database
-  north customerApp
+  component customerApp as "Customer App" webapp
 
+  north -> customerApp
   customerApp -> api
   api -> odb
 }
@@ -138,6 +139,9 @@ cell products {
 
 Everything valid in a single-cell document is valid inside a block. A document with **no** blocks is
 one implicit cell.
+
+Each cell holds the client apps that belong to it — a UI goes inside the cell it serves, with its own
+ingress exposure, never on the boundary between two cells.
 
 Once the document uses `cell { }` blocks, components and local dependencies **must** be inside a
 block. Outside a block only `title`, comments, and cross-cell edges are allowed — otherwise:
@@ -192,6 +196,11 @@ links uncluttered.
 
 An external **id** declared on a boundary by two or more cells collapses into a single node rendered
 between them.
+
+**There is no project-level external declaration.** You do not declare a shared external once
+outside the blocks — `south s3 as "AWS S3" storage` at the top level is the error *This document
+uses cell blocks. Components and local dependencies must be inside a named cell.* Sharing is
+inferred from the id, so declare it **inside each cell that uses it**, with the same id.
 
 ```cell
 cell orders {

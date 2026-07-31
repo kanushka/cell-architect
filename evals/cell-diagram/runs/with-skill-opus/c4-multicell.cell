@@ -3,9 +3,9 @@ title Storefront
 cell orders as "Order Cell" {
   version v2
 
-  component customerApp as "Customer App" webapp
   component api as "Orders API" api
-  component odb as "Order Store" database
+  component odb as "Order Database" database
+  component customerApp as "Customer App" webapp
 
   south s3 as "AWS S3" storage
 
@@ -19,10 +19,10 @@ cell orders as "Order Cell" {
 
 cell products as "Products Cell" {
   component api as "Products API" api
-  component cdb as "Catalog Store" database
+  component pdb as "Catalog Database" database
 
   south s3 as "AWS S3" storage
 
-  api -> cdb
+  api -> pdb
   api -> s3 : archive
 }

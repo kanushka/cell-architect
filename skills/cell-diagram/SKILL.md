@@ -16,22 +16,25 @@ then write the syntax.
 
 | The thing you are placing | Goes |
 | --- | --- |
-| Anything this team builds, deploys and operates — services, APIs, workers, functions, **and the web/mobile UIs they ship** | `component` **inside** the cell |
+| Services, APIs, workers, functions | `component` **inside** the cell |
+| **Client apps and UIs** — web, mobile, admin consoles, portals | `component` **inside** the cell |
 | The cell's **own** datastore, cache or queue | `component` **inside** the cell |
-| A named system **someone else owns** that calls in from the **public internet** | `north <id>` |
-| A named system someone else owns that calls in from the **intranet / corporate network only** | `west <id>` |
+| A system the brief says is **third-party or another org's** and calls in over the **public internet** | `north <id>` |
+| A third-party or other-org system that calls in over the **intranet / corporate network only** | `west <id>` |
 | A named service this cell calls, run by **another team on your own platform** | `east <id>` |
 | A **third-party SaaS or vendor** this cell calls | `south <id>` |
-| Traffic crosses the boundary but the counterpart has **no identity** | gateway exposure — `north -> api`, `api -> east` |
+| A counterpart the brief names only by **category** ("an object store", "any client") | gateway exposure — `north -> api`, `api -> east` |
 | A component in **another cell of the same project** | cross-cell link — `orders.api -> products.api` |
 
-**Ownership decides inside vs. boundary — not whether it's a UI.** A React app your team builds and
-deploys is a `component` inside the cell. The thing on `north` is the *consumer*: a partner's
-system, another company's app. If the consumer is just "customers with browsers", it has no
-identity — write `north -> webApp`, not `north Customers`.
+**A client app is part of the system, not a consumer of it.** When someone describes their system,
+its UIs come with it — the web app, the mobile app, the admin console, the customer portal. They go
+**inside** the cell as components. The cell is the project boundary, and the UI is in the project.
 
-That gives the most common shape in the whole notation — a first-party UI, reached by anonymous
-users, calling the cell's own API:
+Move a UI onto a boundary **only when the brief explicitly makes it someone else's**: a third-party
+app, a partner's portal, another org's system. "Our customer portal", "an Ops Console the finance
+team uses", "a React app customers use" are all inside. Silence is not evidence of third-party.
+
+So the most common shape in the whole notation is a UI inside the cell, reached by anonymous users:
 
 ```cell
 component webApp as "Customer Web" webapp
@@ -41,20 +44,28 @@ north -> webApp                # anonymous ingress, no external node
 webApp -> api
 ```
 
-**When ownership is unstated, default to inside.** A brief that says "our customer portal" or "an
-Ops Console the finance team uses" without naming an owner is describing part of this system — make
-it a `component` and give it an ingress exposure on the side that matches its network. Reserve a
-named boundary external for a consumer the brief clearly attributes to someone else (a partner, a
-different team's product). Whichever you pick, apply it consistently across the document.
+`north -> webApp` says "people arrive from the internet". `north CustomerApp` would say "a system we
+don't own calls us" — a different and usually wrong claim.
+
+**In a multi-cell project, each client app belongs inside the cell it serves.** Don't float a UI on
+the boundary between two cells; put it in its own cell with an ingress exposure there.
 
 **The cell's own database is a component, not a south external.** Putting it on a boundary asserts
 that somebody else owns it. Owned data lives inside the cell — that is what makes the cell
 independently deployable.
 
-**Never invent a placeholder external.** If the brief says "any client can call it" or "we haven't
-picked the object store yet", there is no node to draw. Use a gateway exposure — it links the
-component to the boundary gateway and creates no external node. `north Client` asserts knowledge you
-don't have.
+**The proper-noun test — run it before writing any `<direction> <id>` line.** Ask: *does the brief
+give this thing a name I could look up?*
+
+- **Proper noun** — `Stripe`, `Auth0`, `AWS S3`, `Customer Profile API`, `Partner Portal`. It has an
+  identity. Declare the external: `south Stripe payment`.
+- **Category noun** — "an object store", "a queue", "some CDN", "any client", "callers", "another
+  team's service, not decided yet". It has no identity. Write the **gateway exposure**:
+  `indexer -> east`, `north -> api`. No external node.
+
+Turning a category into a name — `east objectStore as "Object Store"`, `north Client` — invents a
+system the brief does not have. It looks more complete and is less true. This applies to **outbound
+exactly as much as inbound**: an undecided downstream is `api -> east`, not `east someStore`.
 
 **Don't invent edges either.** Draw the dependencies the brief states. If it names two components
 and never connects them, leave them unconnected and say so — a plausible-looking arrow is a claim
@@ -65,6 +76,20 @@ component and flag that you did.
 **East vs south is the org boundary, not distance.** Another team's API inside your company is
 `east`. Stripe, Auth0, SendGrid are `south`. This holds for gateway exposures too: an undecided
 system that will be run by another team is still `api -> east`.
+
+## Red flags — stop and re-place
+
+If you catch yourself writing any of these, the placement is wrong:
+
+- **"I'll call it `objectStore` / `Client` / `PublicUsers` for now."** You just turned a category
+  noun into a proper noun. Gateway exposure instead — `indexer -> east`, `north -> api`.
+- **"The outbound side needs somewhere to point."** No — `api -> east` is a complete statement on
+  its own. An arrow into the gateway is the answer, not a half-answer.
+- **"This one's a UI so it goes on the boundary."** UIs are components. Only the brief calling it
+  third-party moves it out.
+- **"The portal is inside but the console can go on `west`."** Two client apps in one document,
+  placed by two different rules. Pick one reading of the brief and apply it to both.
+- **"The database is theirs, roughly."** If this cell reads and writes it, it is inside.
 
 ## Direction is enforced
 
@@ -128,13 +153,15 @@ Multi-cell projects, cross-cell links, shared externals and the full grammar are
 | Mistake | Fix |
 | --- | --- |
 | The cell's own DB declared as `south ordersDb database` | Make it a `component` inside the cell |
-| A first-party React app declared as `north webApp` | It's yours — `component webApp`, then `north -> webApp` |
+| A client app or portal declared as `north webApp` | UIs are part of the system — `component webApp`, then `north -> webApp` |
+| A UI floated on the boundary between two cells | Put it inside the cell it serves, with its own ingress exposure |
 | Inventing `north PublicUsers` for anonymous callers | `north -> api` gateway exposure |
 | `component north` / `east as api` | Reserved keyword used as an id — rename it |
 | `api -> north CustomerApp` | North is inbound: `north CustomerApp -> api` |
 | Same external id declared on two sides | Two ids: `north partnerIn`, `east partnerOut` |
 | `api -- db` or `api --> db` | The only arrow is `->` |
 | Two cells archiving to S3 with ids `s3` and `awsS3` | Use the **same id** in both cells so it renders as one shared node |
+| Declaring a shared external once at the top level, outside the blocks | There is no project-level declaration — declare it **inside each cell**, same id |
 | Cross-cell link written as a plain `->` between cells | Qualify the target: `orders.api -> products.api` |
 | `api -> south products.api` for a cyclic dependency | Bare `south` is an error — needs an entry: `south-north` |
 | `version` at the top level of a multi-cell document | `version` is per cell — put it inside the block |
@@ -150,6 +177,7 @@ it compiles, and walk this list — the diagnostics table catches syntax, but ev
 above compiles cleanly:
 
 - [ ] Every datastore the cell owns is a `component`, not a boundary external.
+- [ ] Every client app and UI is a `component`, unless the brief called it third-party.
 - [ ] Nothing on a boundary is a name the brief didn't give you.
 - [ ] Every `east` external is another team's; every `south` external is outside the company.
 - [ ] No arrow points out of `north`/`west` or into `east`/`south`.
@@ -167,14 +195,16 @@ component uploadApi as "Upload API" api
 component transcoder worker
 component catalog service
 component mdb as "Media Store" database
+component cms as "Editorial CMS" webapp
 
-west cms as "Editorial CMS" webapp
 east identity as "Identity Service" api
 south Cloudflare cdn
 south Mux transcoding
 
+west -> cms                    # editors, on the corporate network
+north -> catalog               # anonymous viewers, over the internet
+
 cms -> uploadApi : publish
-north -> catalog
 
 uploadApi -> mdb
 uploadApi -> transcoder : queue job

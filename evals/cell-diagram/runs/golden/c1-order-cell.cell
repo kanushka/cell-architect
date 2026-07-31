@@ -1,15 +1,13 @@
 title OrderCell
 version v1
 
-component WebApp web-app
+component WebApp as "Customer Web" webapp
 component OrderAPI api
 component OrderService service
 component OrderDB database
 component ep as "Event Publisher" event
 
-north CustomerApp as "Customer Web" webapp
-
-CustomerApp -> WebApp : HTTPS
+north -> WebApp
 
 WebApp -> OrderAPI
 OrderAPI -> OrderService

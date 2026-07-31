@@ -1,19 +1,22 @@
 title BillingCell
 
+component portal as "Customer Portal" webapp
+component ops as "Ops Console" webapp
 component BillingAPI api
 component InvoiceService service
 component ReconciliationWorker worker
-component idb as "Invoice MySQL" database
+component idb as "Invoice Store" database
 
-north CustomerPortal as "Customer Portal" webapp
-west OpsConsole as "Ops Console" webapp
 east CustomerProfileAPI as "Customer Profile" api
 east NotificationService as "Notifications" service
 south Auth0 idp
 south SendGrid email
 
-CustomerPortal -> BillingAPI : HTTPS
-OpsConsole -> BillingAPI : backoffice
+north -> portal
+west -> ops
+
+portal -> BillingAPI : HTTPS
+ops -> BillingAPI : backoffice
 
 BillingAPI -> InvoiceService
 InvoiceService -> idb

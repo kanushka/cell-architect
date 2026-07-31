@@ -123,7 +123,14 @@ The inline format is:
 
 The external system is rendered outside the cell. The link enters or exits through the gateway on that boundary.
 
-Declaring the external system first is only needed when you want more than the plain id — a type, or an alias (display name, see [Aliases](#aliases)).
+The inline form accepts a **bare id only**. `OrderService -> south s as "Stripe" payment` is an error — `Inline externals take a bare id` — because everything after the direction would otherwise be swallowed into the id.
+
+Declaring the external system first is therefore required, not just preferred, when you want more than the plain id — a type, or an alias (display name, see [Aliases](#aliases)):
+
+```cell
+south s as "Stripe" payment
+OrderService -> s : capture payment
+```
 
 ## Gateway Exposures
 

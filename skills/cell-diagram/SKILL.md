@@ -128,7 +128,7 @@ api -> sdb
 api -> labels : print label
 api -> rates : quote
 
-# inline form — declares the external and the edge together
+# inline form — declares the external and the edge together, bare id only
 api -> south UPS : book pickup
 
 # gateway exposures create no external node, and take labels too
@@ -148,6 +148,9 @@ api -> east : archive
   `function`. Types are optional — omit them all rather than typing half the nodes.
 - Declaring first is only needed when you want a type or a label. A bare id on the internal side of
   an arrow is inferred as an internal component; `north Foo -> api` creates the external inline.
+- **The inline form takes a bare id — no `as` label, no type.** `api -> south pay as "PayHere"
+  payment` is an error: to give an external a label or a type, declare it on its own line
+  (`south pay as "PayHere" payment`) and then draw a plain arrow (`api -> pay`).
 - **A gateway exposure's target is always an internal component.** `north -> CustomerApp` where
   `CustomerApp` is a declared external silently creates a *second*, internal node with the same id.
 - **Statements are order-independent** — you may use an id before declaring it. Declare-then-use
@@ -156,6 +159,12 @@ api -> east : archive
 - Comments start with `#` or `//`, on their own line or trailing a statement. Blank lines are
   ignored. The exception is **after a `:` label** — everything there is free text, so
   `a -> b : fixes #42` keeps `#42` in the label. Put a note on a labelled dependency on its own line.
+
+**Write `.cell` files with a file-write tool — never through a shell.** In `sh`/`bash`/`zsh`, `->`
+parses as `-` followed by a `>` redirection, so `checkout -> payhere : pay` silently creates an empty
+file named `payhere`. A heredoc, an `echo ... > file`, or piping the document into a shell leaves one
+zero-byte file per arrow target and no diagram. Every cell document is a valid-looking shell script
+that does the wrong thing.
 
 Multi-cell projects, cross-cell links, shared externals and the full grammar are in
 [reference/grammar.md](reference/grammar.md). Read it whenever the diagram has more than one cell.
@@ -172,6 +181,7 @@ Multi-cell projects, cross-cell links, shared externals and the full grammar are
 | `api -> north CustomerApp` | North is inbound: `north CustomerApp -> api` |
 | Same external id declared on two sides | Two ids: `north partnerIn`, `east partnerOut` |
 | `api -- db` or `api --> db` | The only arrow is `->` |
+| `api -> south pay as "PayHere" payment` | Inline externals take a bare id — declare `south pay as "PayHere" payment` on its own line, then `api -> pay` |
 | Two cells archiving to S3 with ids `s3` and `awsS3` | Use the **same id** in both cells so it renders as one shared node |
 | Declaring a shared external once at the top level, outside the blocks | There is no project-level declaration — declare it **inside each cell**, same id |
 | Cross-cell link written as a plain `->` between cells | Qualify the target: `orders.api -> products.api` |

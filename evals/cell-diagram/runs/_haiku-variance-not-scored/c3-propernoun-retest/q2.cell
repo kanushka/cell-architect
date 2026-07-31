@@ -1,0 +1,10 @@
+title SearchCell
+
+component api as "Search API" api
+component indexer as "Indexer" worker
+component indexStore as "Index Store" database
+
+north -> api
+
+indexer -> indexStore
+indexer -> east

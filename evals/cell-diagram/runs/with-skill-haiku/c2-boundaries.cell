@@ -1,0 +1,30 @@
+title BillingCell
+version v1
+
+component billingApi as "Billing API" api
+component invoiceService as "Invoice Service" service
+component reconciliationWorker as "Reconciliation Worker" worker
+component mysqlDb as "Invoice Database" database
+component customerPortal as "Customer Portal" webapp
+component opsConsole as "Ops Console" webapp
+
+east customerProfileApi as "Customer Profile API" api
+east notificationService as "Notification Service" service
+south Auth0
+south SendGrid
+
+north -> customerPortal
+west -> opsConsole
+
+customerPortal -> billingApi
+opsConsole -> billingApi
+
+billingApi -> mysqlDb
+billingApi -> customerProfileApi : fetch customer data
+billingApi -> Auth0 : introspect token
+
+invoiceService -> mysqlDb
+invoiceService -> notificationService : notify on invoice creation
+invoiceService -> SendGrid : email invoice
+
+reconciliationWorker -> mysqlDb : reconcile

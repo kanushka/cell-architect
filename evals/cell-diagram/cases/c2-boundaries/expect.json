@@ -1,0 +1,70 @@
+{
+  "title": "Boundary discrimination: north vs west vs east vs south",
+  "checks": [
+    { "kind": "cellCount", "n": 1, "desc": "one cell" },
+    {
+      "kind": "componentMatching",
+      "pattern": "mysql|db|database|invoicestore|store",
+      "desc": "cell-owned MySQL is INSIDE the cell"
+    },
+    {
+      "kind": "noExternalMatching",
+      "pattern": "mysql",
+      "desc": "cell-owned MySQL must NOT be on a boundary"
+    },
+    {
+      "kind": "componentMatching",
+      "pattern": "reconcil",
+      "desc": "reconciliation worker is internal"
+    },
+    {
+      "kind": "componentMatching",
+      "pattern": "portal",
+      "desc": "the customer portal is a client app of this system — inside the cell"
+    },
+    {
+      "kind": "componentMatching",
+      "pattern": "ops|console",
+      "desc": "the Ops Console is a client app of this system — inside the cell"
+    },
+    {
+      "kind": "noExternalMatching",
+      "pattern": "portal|console",
+      "desc": "neither UI is a boundary external; the brief never calls them third-party"
+    },
+    {
+      "kind": "inboundOn",
+      "direction": "north",
+      "desc": "public-internet ingress arrives on north — named external or gateway exposure"
+    },
+    {
+      "kind": "inboundOn",
+      "direction": "west",
+      "desc": "intranet-only ingress arrives on west, kept distinct from the public one"
+    },
+    {
+      "kind": "externalOn",
+      "direction": "east",
+      "pattern": "profile|customer",
+      "desc": "org platform service (Customer Profile) on east"
+    },
+    {
+      "kind": "externalOn",
+      "direction": "east",
+      "pattern": "notif",
+      "desc": "org platform service (Notification) on east"
+    },
+    {
+      "kind": "externalOn",
+      "direction": "south",
+      "pattern": "auth0",
+      "desc": "Auth0 (third-party SaaS) on south"
+    },
+    {
+      "kind": "externalOn",
+      "direction": "south",
+      "pattern": "sendgrid",
+      "desc": "SendGrid (third-party SaaS) on south"
+    }
+  ]
+}

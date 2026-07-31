@@ -1,0 +1,29 @@
+title BillingCell
+
+component portal as "Customer Portal" webapp
+component ops as "Ops Console" webapp
+component billingApi as "Billing API" api
+component invoices as "Invoice Service" service
+component recon as "Reconciliation Worker" worker
+component bdb as "Invoice Store" database
+
+east profiles as "Customer Profile API" api
+east notify as "Notification Service" service
+south Auth0 auth
+south SendGrid email
+
+north -> portal
+west -> ops
+
+portal -> billingApi
+ops -> billingApi
+
+billingApi -> invoices
+billingApi -> bdb
+invoices -> bdb
+recon -> bdb : nightly reconcile
+
+billingApi -> Auth0 : introspect token
+billingApi -> profiles : look up customer
+invoices -> notify : notify customer
+invoices -> SendGrid : email invoice

@@ -1,0 +1,16 @@
+title OrderCell
+
+component webApp as "Customer Web" webapp
+component ordersApi as "Orders API" api
+component orderService as "Order Service" service
+component odb as "Order Store" database
+component ep as "Event Publisher" event
+
+south Stripe payments
+
+north -> webApp
+webApp -> ordersApi
+ordersApi -> orderService
+orderService -> odb
+orderService -> ep : order.created
+orderService -> Stripe : charge card

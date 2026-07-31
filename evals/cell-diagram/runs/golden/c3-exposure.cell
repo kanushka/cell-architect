@@ -1,0 +1,12 @@
+title SearchCell
+
+component SearchAPI api
+component Indexer service
+component istore as "Index Store" database
+
+north -> SearchAPI
+
+SearchAPI -> Indexer
+Indexer -> istore
+
+Indexer -> east

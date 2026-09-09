@@ -1,0 +1,34 @@
+title Billing
+
+# Components we own and run inside the cell
+component api as "Billing API" api
+component invoices as "Invoice Service" service
+component recon as "Reconciliation Worker" worker
+component idb as "Invoice DB" database
+
+# Inbound: public internet on north, corporate network on west
+north portal as "Customer Portal" web-app
+west ops as "Ops Console" web-app
+
+# Outbound: internal platform on east, third-party SaaS on south
+east profiles as "Customer Profile API" api
+east notifications as "Notification Service" service
+south Auth0 as Auth0 auth
+south SendGrid as SendGrid email
+
+# Who talks to us
+portal -> api : HTTPS
+ops -> api : corporate network
+
+# Inside the cell
+api -> invoices
+api -> idb
+invoices -> idb
+recon -> idb : nightly reconciliation
+recon -> invoices
+
+# What we talk to
+api -> profiles : customer profile
+invoices -> notifications : invoice events
+api -> Auth0 : token introspection
+invoices -> SendGrid : email invoice

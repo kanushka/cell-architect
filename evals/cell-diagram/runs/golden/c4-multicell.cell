@@ -1,0 +1,24 @@
+title Storefront
+
+cell orders as "Order Cell" {
+  version v2
+  component api as "Orders API" api
+  component odb as "Order Store" database
+  component customerApp as "Customer App" webapp
+
+  north -> customerApp
+  customerApp -> api : HTTPS
+  api -> odb
+  api -> south s3 : archive
+}
+
+cell products {
+  component api as "Products API" api
+  component cstore as "Catalog Store" database
+  south s3 as "AWS S3" storage
+
+  api -> cstore
+  api -> s3 : archive
+}
+
+orders.api -> products.api : get stock

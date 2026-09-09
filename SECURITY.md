@@ -18,7 +18,7 @@ Older published versions are not patched.
 
 Report it privately through
 [GitHub's private vulnerability reporting](https://github.com/kanushka/cell-architect/security/advisories/new)
-for this repository. If that is unavailable to you, email **kanushkanet@gmail.com** with
+for this repository. If that is unavailable to you, email **hello@kanushka.com** with
 `SECURITY` in the subject line.
 
 Please include:

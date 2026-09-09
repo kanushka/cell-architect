@@ -46,9 +46,9 @@ describe("App", () => {
   it("renders the default sample full-bleed with the editor open", () => {
     const { container } = render(<App />);
 
-    expect(screen.getByText("Orders")).toBeInTheDocument();
-    expect(screen.getByText("Customer App")).toBeInTheDocument();
-    expect(screen.getByLabelText("Diagram name")).toHaveValue("Order System");
+    expect(screen.getByText("Checkout API")).toBeInTheDocument();
+    expect(screen.getByText("Storefront Web")).toBeInTheDocument();
+    expect(screen.getByLabelText("Diagram name")).toHaveValue("Storefront");
     expect(container.querySelector('[data-cell-shape="octagon"]')).toBeInTheDocument();
     expect(container.querySelectorAll('[data-node-shape="circle"]').length).toBeGreaterThanOrEqual(4);
   });
@@ -152,8 +152,8 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "New diagram" }));
     expect(screen.getByLabelText("Diagram name")).toHaveValue("Untitled Cell");
 
-    await user.click(screen.getByText("Order System"));
-    expect(screen.getByLabelText("Diagram name")).toHaveValue("Order System");
+    await user.click(screen.getByText("Storefront"));
+    expect(screen.getByLabelText("Diagram name")).toHaveValue("Storefront");
 
     await user.click(screen.getByRole("button", { name: "Close diagrams panel" }));
     expect(screen.queryByRole("navigation", { name: "Saved diagrams" })).not.toBeInTheDocument();
@@ -164,19 +164,19 @@ describe("App", () => {
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: "Diagrams" }));
-    await user.click(screen.getByRole("button", { name: "More actions for Order System" }));
+    await user.click(screen.getByRole("button", { name: "More actions for Storefront" }));
     await user.click(screen.getByRole("menuitem", { name: "Duplicate" }));
 
-    expect(screen.getByText("Order System Copy")).toBeInTheDocument();
+    expect(screen.getByText("Storefront Copy")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "More actions for Order System" }));
+    await user.click(screen.getByRole("button", { name: "More actions for Storefront" }));
     await user.click(screen.getByRole("menuitem", { name: "Delete" }));
 
     const dialog = screen.getByRole("dialog", { name: "Delete diagram" });
-    expect(dialog).toHaveTextContent('Delete "Order System"? This cannot be undone.');
+    expect(dialog).toHaveTextContent('Delete "Storefront"? This cannot be undone.');
     await user.click(screen.getByRole("button", { name: "Delete" }));
 
-    expect(screen.queryByText("Order System", { selector: "strong" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Storefront", { selector: "strong" })).not.toBeInTheDocument();
   });
 
   it("prevents creating or duplicating more than ten diagrams", async () => {
@@ -346,12 +346,12 @@ describe("App", () => {
 
   it("focuses linked connections when clicking a component and clears with Escape", async () => {
     render(<App />);
-    const ordersLabel = screen.getByText("Orders");
-    const ordersCircle = ordersLabel.closest(".component-node");
-    const ordersNode = ordersLabel.closest(".react-flow__node");
+    const checkoutLabel = screen.getByText("Checkout API");
+    const ordersCircle = checkoutLabel.closest(".component-node");
+    const ordersNode = checkoutLabel.closest(".react-flow__node");
 
     expect(ordersCircle).toBeInTheDocument();
-    await waitFor(() => expect(ordersCircle).toHaveAttribute("data-diagram-node-id", "orders"));
+    await waitFor(() => expect(ordersCircle).toHaveAttribute("data-diagram-node-id", "checkout"));
 
     fireEvent.click(ordersCircle!);
     await waitFor(() => expect(ordersNode).toHaveClass("connection-highlight-node"));

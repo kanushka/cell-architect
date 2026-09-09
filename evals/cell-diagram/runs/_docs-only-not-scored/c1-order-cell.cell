@@ -1,0 +1,19 @@
+title OrderManagement
+
+component WebApp as "Customer Web App" web-app
+component OrdersAPI as "Orders API" api
+component OrderService as "Order Service" service
+component odb as "Order DB" database
+component ep as "Event Publisher" event
+
+south Stripe payment
+
+# Customers arrive over HTTPS from the public internet
+north -> WebApp : HTTPS
+
+WebApp -> OrdersAPI
+OrdersAPI -> OrderService
+OrderService -> odb : order records
+OrderService -> ep : order.created
+
+OrderService -> Stripe : charge card

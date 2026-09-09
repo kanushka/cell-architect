@@ -1,0 +1,13 @@
+title Search
+
+component searchApi as "Search API" api
+component indexer as Indexer service
+component indexStore as "Index Store" database
+
+# Public internet callers are unknown — expose the API through the inbound gateway
+north -> searchApi
+
+indexer -> indexStore : read documents
+
+# Object store is another team's system, not yet decided — outbound gateway exposure
+indexer -> east : push documents

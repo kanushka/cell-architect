@@ -1,0 +1,16 @@
+title Checkout and Loyalty
+
+cell checkout as "Checkout Cell" {
+  component api as "Checkout API" api
+}
+
+cell loyalty as "Loyalty Cell" {
+  component points as "Points Service" service
+}
+
+# Checkout -> Loyalty: connected link, exits checkout east, enters loyalty west
+checkout.api -> loyalty.points : burn points
+
+# Loyalty -> Checkout closes the cycle, so render it decoupled
+# (exit south, enter north) instead of a line crossing back across the diagram
+loyalty.points -> south-north checkout.api : look up order totals

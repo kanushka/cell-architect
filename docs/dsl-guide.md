@@ -123,7 +123,14 @@ The inline format is:
 
 The external system is rendered outside the cell. The link enters or exits through the gateway on that boundary.
 
-Declaring the external system first is only needed when you want more than the plain id — a type, or an alias (display name, see [Aliases](#aliases)).
+The inline form accepts a **bare id only**. `OrderService -> south s as "Stripe" payment` is an error — `Inline externals take a bare id` — because everything after the direction would otherwise be swallowed into the id.
+
+Declaring the external system first is therefore required, not just preferred, when you want more than the plain id — a type, or an alias (display name, see [Aliases](#aliases)):
+
+```cell
+south s as "Stripe" payment
+OrderService -> s : capture payment
+```
 
 ## Gateway Exposures
 
@@ -293,6 +300,24 @@ north CustomerApp -> WebApp : HTTPS
 // Internal service call
 WebApp -> OrderAPI
 ```
+
+A comment may also follow a statement on the same line:
+
+```cell
+component odb database   # owned by this cell
+WebApp -> OrderAPI       // synchronous
+```
+
+The one place a trailing comment does not apply is **after a `:` label**. Everything following the
+label separator is free text, so `#` and `//` there are content rather than a comment — which is
+what lets a label read `fixes #42` or carry a URL:
+
+```cell
+orders -> tracker : fixes #42
+orders -> docs : see https://example.com/runbook
+```
+
+If you need a note on a labelled dependency, put it on its own line above.
 
 ## Manual Arrangement
 

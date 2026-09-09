@@ -1,0 +1,24 @@
+{
+  "title": "Gateway exposure when the counterpart is unknown",
+  "checks": [
+    { "kind": "cellCount", "n": 1, "desc": "one cell" },
+    { "kind": "componentMatching", "pattern": "search", "desc": "search api internal" },
+    { "kind": "componentMatching", "pattern": "index", "desc": "indexer internal" },
+    {
+      "kind": "edgeKind",
+      "edgeKind": "exposure",
+      "min": 2,
+      "desc": "uses gateway exposure arrows (north -> X and X -> east) rather than inventing external nodes"
+    },
+    {
+      "kind": "noExternalMatching",
+      "pattern": "client|caller|user|internet|public|unknown|consumer",
+      "desc": "must NOT invent a placeholder external for the unknown caller"
+    },
+    {
+      "kind": "externalCount",
+      "max": 0,
+      "desc": "no external nodes at all — both counterparts are unspecified"
+    }
+  ]
+}

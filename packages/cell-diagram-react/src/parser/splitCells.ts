@@ -1,4 +1,5 @@
 import { Diagnostic } from "../domain/cellModel";
+import { stripTrailingComment } from "./labels";
 
 export interface SourceLine {
   text: string;
@@ -42,7 +43,7 @@ export function splitCells(source: string): SplitResult {
 
   if (!hasBlocks) {
     const lines = rawLines
-      .map((text, index) => ({ text: text.trim(), line: index + 1 }))
+      .map((text, index) => ({ text: stripTrailingComment(text.trim()), line: index + 1 }))
       .filter((entry) => entry.text.length > 0);
     return { implicit: true, cells: [{ id: "main", headerLine: 0, lines }], topLevel: [], diagnostics: [] };
   }
@@ -54,7 +55,7 @@ export function splitCells(source: string): SplitResult {
 
   for (let index = 0; index < rawLines.length; index++) {
     const line = index + 1;
-    const trimmed = rawLines[index].trim();
+    const trimmed = stripTrailingComment(rawLines[index].trim());
     if (trimmed.length === 0) { continue; }
 
     const header = parseCellHeader(trimmed);

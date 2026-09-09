@@ -1,27 +1,29 @@
-export const defaultSampleSource = `component WebApp web-app
-component orders as Orders api
-component odb as OrderDB database
+export const defaultSampleSource = `title Storefront
+version v3
+
+component web as "Storefront Web" webapp
+component support as "Support Dashboard" webapp
+component checkout as "Checkout API" api
+component payments as "Payments Service" service
+component odb as "Order Store" database
 component ep as "Event Publisher" event
 
-north ca as "Customer App" webapp
-north pp as "Partner Portal" webapp
-west ap as "Admin Portal" webapp
-east inventories api
-east customers api
+east profiles as "User Profile API" api
 south Stripe payment
 south SendGrid email
 
-ca -> WebApp : HTTPS
-pp -> orders : REST
-ap -> orders : backoffice
+# anonymous shoppers, over the internet
+north -> web
+# support staff, on the corporate network
+west -> support
 
-WebApp -> orders
-orders -> odb
-orders -> ep : order.created
+web -> checkout : HTTPS
+support -> checkout : refunds
 
-orders -> inventories : reserve stock
-orders -> customers : customer profile
-orders -> Stripe : payment
-orders -> SendGrid : email
+checkout -> odb
+checkout -> profiles : fetch customer profile
+checkout -> payments : authorize
+checkout -> ep : order.created
 
-north -> orders`;
+payments -> Stripe : capture payment
+ep -> SendGrid : order confirmation`;

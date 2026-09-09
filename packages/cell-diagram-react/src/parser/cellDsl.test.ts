@@ -210,6 +210,39 @@ API -> south`);
     ]);
   });
 
+  it("rejects a label or type on an inline outbound external", () => {
+    const result = parseCellDsl(`checkout -> south payhere as "PayHere" payment-gateway : capture payment`);
+
+    expect(result.document.edges).toEqual([]);
+    expect(result.diagnostics).toEqual([
+      {
+        severity: "error",
+        message:
+          'Inline externals take a bare id: "south payhere". Declare the external on its own line to give it a label or type.',
+        line: 1,
+        column: 27
+      }
+    ]);
+  });
+
+  it("rejects a label or type on an inline inbound external", () => {
+    const result = parseCellDsl(`north partner as "Partner Portal" webapp -> api`);
+
+    expect(result.document.edges).toEqual([]);
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0].message).toContain('Inline externals take a bare id: "north partner"');
+  });
+
+  it("still accepts bare inline externals on both sides", () => {
+    const result = parseCellDsl(`north CustomerApp -> api : HTTPS
+api -> south Stripe : payment
+api -> east
+north -> api`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.document.edges).toHaveLength(4);
+  });
+
   it("still allows reserved keywords as labels", () => {
     const result = parseCellDsl(`component api as component`);
 
@@ -253,6 +286,74 @@ east inv as "Inventory API"`);
     expect(result.document.externals).toEqual([
       { id: "adb", direction: "south", label: "Azure Postgre", type: "database", line: 3 },
       { id: "inv", direction: "east", label: "Inventory API", type: undefined, line: 4 }
+    ]);
+  });
+
+  it("strips a trailing comment from a dependency instead of absorbing it into the target id", () => {
+    const result = parseCellDsl(`component Courses
+component Tasks
+
+Courses -> Tasks # not part of the id`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.document.components.map((component) => component.id)).toEqual(["Courses", "Tasks"]);
+    expect(result.document.edges).toEqual([
+      expect.objectContaining({ source: "Courses", target: "Tasks", label: undefined })
+    ]);
+  });
+
+  it("strips a trailing // comment", () => {
+    const result = parseCellDsl(`component a
+component b
+
+a -> b // note`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.document.edges).toEqual([expect.objectContaining({ source: "a", target: "b" })]);
+  });
+
+  it("strips a trailing comment from component, external, title and version statements", () => {
+    const result = parseCellDsl(`title Storefront # the project
+version v3 // second revision
+component api service # our own
+south Stripe payment # vendor`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.document.title).toBe("Storefront");
+    expect(result.document.version).toBe("v3");
+    expect(result.document.components).toEqual([
+      { id: "api", label: undefined, type: "service", line: 3 }
+    ]);
+    expect(result.document.externals).toEqual([
+      { id: "Stripe", direction: "south", label: undefined, type: "payment", line: 4 }
+    ]);
+  });
+
+  /**
+   * Everything after ":" is a free-text label, so a "#" or "//" there is content,
+   * not a comment. Stripping it would silently truncate legitimate labels.
+   */
+  it("keeps # and // inside an edge label", () => {
+    const result = parseCellDsl(`component a
+component b
+component c
+
+a -> b : fixes #42
+a -> c : see https://example.com/docs`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.document.edges.map((edge) => edge.label)).toEqual([
+      "fixes #42",
+      "see https://example.com/docs"
+    ]);
+  });
+
+  it("keeps # inside a quoted label", () => {
+    const result = parseCellDsl(`component c1 as "Cell #1" service`);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.document.components).toEqual([
+      { id: "c1", label: "Cell #1", type: "service", line: 1 }
     ]);
   });
 

@@ -1,0 +1,78 @@
+// NOTE: The Cell Architect .cell grammar was not available in this working
+// directory. The syntax below is an inferred best guess, not verified against
+// a real parser. Treat it as a structural draft of the intended architecture.
+
+cell OrderManagement {
+  label "Order Management"
+
+  actor Customer {
+    label "Customer"
+    external true
+  }
+
+  external Stripe {
+    label "Stripe"
+    kind "payment-provider"
+  }
+
+  component WebApp {
+    label "Storefront Web App"
+    tech "React"
+    kind "frontend"
+  }
+
+  component OrdersApi {
+    label "Orders API"
+    kind "api"
+  }
+
+  component OrderService {
+    label "Order Service"
+    kind "service"
+  }
+
+  component EventPublisher {
+    label "Event Publisher"
+    kind "messaging"
+  }
+
+  datastore OrdersDb {
+    label "Orders Database"
+    tech "Postgres"
+    kind "database"
+  }
+
+  ingress {
+    Customer -> WebApp {
+      label "Browses and places orders"
+      protocol "HTTPS"
+      zone "public-internet"
+    }
+  }
+
+  WebApp -> OrdersApi {
+    label "Order requests"
+    protocol "HTTPS"
+  }
+
+  OrdersApi -> OrderService {
+    label "Delegates order work"
+  }
+
+  OrderService -> OrdersDb {
+    label "Reads/writes order records"
+    owns true
+  }
+
+  OrderService -> EventPublisher {
+    label "Publishes order.created"
+    event "order.created"
+  }
+
+  egress {
+    OrderService -> Stripe {
+      label "Charges card"
+      protocol "HTTPS"
+    }
+  }
+}

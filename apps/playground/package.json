@@ -20,7 +20,7 @@
     "@uiw/react-codemirror": "^4.23.13",
     "lucide-react": "^1.27.0",
     "lz-string": "^1.5.0",
-    "nanoid": "^5.0.9",
+    "nanoid": "^6.0.1",
     "react": "^19.2.8",
     "react-dom": "^18.3.1"
   }
